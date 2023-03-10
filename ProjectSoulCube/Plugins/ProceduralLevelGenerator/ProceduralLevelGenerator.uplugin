@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "ProceduralLevelGenerator",
+	"Description": "A simple procedural level generator",
+	"Category": "Other",
+	"CreatedBy": "Gagan G",
+	"CreatedByURL": "https://github.com/gaganref",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "ProceduralLevelGenerator",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
