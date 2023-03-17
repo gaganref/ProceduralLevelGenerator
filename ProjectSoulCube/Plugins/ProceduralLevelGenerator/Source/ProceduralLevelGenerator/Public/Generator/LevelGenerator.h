@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "LevelGenerator.generated.h"
 
+class UDynamicTextureComponent;
 struct FFloatArray;
 
 UCLASS()
@@ -19,7 +20,6 @@ private:
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USceneComponent> SceneComponent;
 
-#if WITH_EDITORONLY_DATA	
 	/** Plane where the perlin noise is projected using texture. */
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> NoisePlane;
@@ -36,11 +36,16 @@ private:
 
 	UPROPERTY(Category = "Debug", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	bool bShowMapPlane = true;
-#endif
+
+	/** Plane where the perlin noise is projected using texture. */
+	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDynamicTextureComponent> DynamicTextureComponent;
 	
 public:	
 	// Sets default values for this actor's properties
-	ALevelGenerator();
+	ALevelGenerator() = default;
+
+	ALevelGenerator(const FObjectInitializer& ObjectInitializer);
 	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -48,7 +53,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
+
+	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void PostActorCreated() override;
 	virtual void PostLoad() override;
 
@@ -59,14 +65,14 @@ protected:
 	
 public:
 
-#if WITH_EDITOR	
 	FORCEINLINE TObjectPtr<UStaticMeshComponent> GetNoisePlane() const {return NoisePlane;}
 	FORCEINLINE TObjectPtr<UStaticMeshComponent> GetMapPlane() const {return MapPlane;}
-#endif
 
-	TObjectPtr<UTexture2D> GenerateTextureFromNoise(const TArray<FFloatArray>& NoiseMap);
 
 public:
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	int32 Seed = 231;
+	
 	// Total no of rows(→) or total no of cells(■) in each row(→) in the grid.
 	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	int32 Rows = 10;
@@ -78,4 +84,13 @@ public:
 	// Size of each individual cell (as a cell is a square SizeOnX = SizeOnY)
 	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.00001f))
 	float Scale = 0.2f;
+
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	int32 Octaves = 4;
+
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	float Persistence = 0.6f;
+
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	float Lacunarity = 2.3f;
 };

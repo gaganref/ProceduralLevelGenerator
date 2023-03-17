@@ -4,7 +4,10 @@
 #include "Generator/LevelGenerator.h"
 
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetRenderingLibrary.h"
+#include "Misc/DynamicTextureComponent.h"
 #include "Misc/Noise.h"
+#include "Misc/Structs.h"
 
 #define DEBUG_GET_CURR_CLASS_FUNC (FString(__FUNCTION__))
 #define DEBUG_GET_CURR_LINE (FString::FromInt(__LINE__))
@@ -25,11 +28,12 @@
 #define DEBUG_MESSAGE_CUSTOM_TEXT_WITH_INFO(text) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::Printf(TEXT("Debug - %s || Called at- %s::%s."), *FString(text), *DEBUG_GET_CURR_CLASS_FUNC, *DEBUG_GET_CURR_LINE))
 #define DEBUG_PRINT_CUSTOM_TEXT_WITH_INFO(text) DEBUG_LOG_CUSTOM_TEXT_WITH_INFO(text) DEBUG_MESSAGE_CUSTOM_TEXT_WITH_INFO(text)
 
+static TArray<FLinearColorArray> PixelColorArrayEmpty;
 
 // Sets default values
-ALevelGenerator::ALevelGenerator()
+ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
@@ -37,9 +41,7 @@ ALevelGenerator::ALevelGenerator()
 	// Make the scene component the root component
 	RootComponent = SceneComponent;
 
-	
 #if WITH_EDITORONLY_DATA
-	
 	NoisePlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Noise Plane"));
 	NoisePlane->SetupAttachment(SceneComponent);
 	NoisePlane->SetVisibility(bShowNoisePlane);
@@ -47,7 +49,10 @@ ALevelGenerator::ALevelGenerator()
 	MapPlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Map Plane"));
 	MapPlane->SetupAttachment(SceneComponent);
 	MapPlane->SetVisibility(bShowMapPlane);
-#endif	
+#endif
+
+	DynamicTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Dynamic Texture Component"));
+	DynamicTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
 }
 
 // Called when the game starts or when spawned
@@ -64,92 +69,59 @@ void ALevelGenerator::Tick(float DeltaTime)
 
 }
 
+void ALevelGenerator::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	
+	InitLevelGenerator();
+}
+
 void ALevelGenerator::PostActorCreated()
 {
 	Super::PostActorCreated();
 
-	InitLevelGenerator();
+	// InitLevelGenerator();
 }
 
 void ALevelGenerator::PostLoad()
 {
 	Super::PostLoad();
 
-	InitLevelGenerator();
+	// InitLevelGenerator();
 }
 
 void ALevelGenerator::InitLevelGenerator()
 {
-	const TArray<FFloatArray>NoiseMap = UNoise::GenerateNoiseMap(Rows,Columns, Scale);
+	const TArray<FFloatArray>& NoiseMap = UNoise::GenerateNoiseMap(Rows, Columns, Scale, Seed, Octaves, Persistence, Lacunarity);
 	GenerateMapsOnPlanes(NoiseMap);
 }
 
 void ALevelGenerator::GenerateMapsOnPlanes(const TArray<FFloatArray>& NoiseMap)
 {
-	TObjectPtr<UTexture2D> NoiseTexture = GenerateTextureFromNoise(NoiseMap);
-	
-}
+	// TObjectPtr<UTexture2D> NoiseTexture = GenerateTextureFromNoise(NoiseMap);
 
-TObjectPtr<UTexture2D> ALevelGenerator::GenerateTextureFromNoise(const TArray<FFloatArray>& NoiseMap)
-{
 	const int32 MapX = NoiseMap[0].Num();
 	const int32 MapY = NoiseMap.Num();
-	TObjectPtr<UTexture2D> Texture = UTexture2D::CreateTransient(MapX, MapY);
-
-
-	// @Ref: https://www.orfeasel.com/generating-procedural-textures/
-
-	//uint8* Pixels = GeneratePixels(TextureHeight, TextureWidth);
-	//Each element of the array contains a single color so in order to represent information in
-	//RGBA we need to have an array of length TextureWidth * TextureHeight * 4
-	uint8* Pixels = new uint8[MapX * MapY * 4];
-	for(int Y=0; Y < MapY; Y++)
+	TArray<FLinearColorArray> LinearColorArray;
+	
+	for(int Y=0; Y < MapY; ++Y)
 	{
-		for(int X=0; X < MapX; X++)
+		FLinearColorArray LinearColors;
+		for(int X=0; X < MapX; ++X)
 		{
-			//Get the current pixel
-			const int32 CurrentPixelIndex = ((Y * MapX) + X);
-
-			// lerp the colour to generate smooth noise gradient
-			FLinearColor NoiseLinearColor = UKismetMathLibrary::LinearColorLerp(FLinearColor::Black, FLinearColor::White, NoiseMap[X][Y]);
-			FColor NoiseColor = NoiseLinearColor.ToFColor(true);
-
-			// DEBUG_PRINT_CUSTOM_TEXT(NoiseColor.ToString());
-			// DEBUG_PRINT_CUSTOM_TEXT(NoiseLinearColor.ToString());
-			
-			Pixels[4 * CurrentPixelIndex] = NoiseColor.B; //b
-			Pixels[4 * CurrentPixelIndex + 1] = NoiseColor.G; //g
-			Pixels[4 * CurrentPixelIndex + 2] = NoiseColor.R; //r
-			Pixels[4 * CurrentPixelIndex + 3] = 255; //set A channel always to maximum
+			FLinearColor NoiseLinearColor = UKismetMathLibrary::LinearColorLerp(FLinearColor::Black, FLinearColor::White, NoiseMap[Y][X]);
+			LinearColors.Add(NoiseLinearColor);
 		}
+		LinearColorArray.Add(LinearColors);
 	}
 
-	//Allocate first mipmap.
-	FTexture2DMipMap* Mip = new FTexture2DMipMap();
-	Texture->GetPlatformData()->Mips.Add(Mip);
-	Mip->SizeX = MapX;
-	Mip->SizeY = MapY;
-
-	//Lock the mipmap data so it can be modified
-	Mip->BulkData.Lock(LOCK_READ_WRITE);
-	uint8* TextureData = (uint8*)Mip->BulkData.Realloc(MapX * MapY * 4);
-	//Copy the pixel data into the Texture data
-	FMemory::Memcpy(TextureData, Pixels, sizeof(uint8) * MapX * MapY * 4);
-	Mip->BulkData.Unlock();
- 
- 
-	//Initialize a new texture
-	Texture->Source.Init(MapX, MapY, 1, 1, ETextureSourceFormat::TSF_BGRA8, Pixels);
-	Texture->UpdateResource();
-
-#if WITH_EDITORONLY_DATA	
+	DynamicTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
+	// DynamicTextureComponent->SetAllPixels(LinearColorArray);
+	DynamicTextureComponent->UpdateTexture();
+	TObjectPtr<UTexture2D> NoiseTexture = DynamicTextureComponent->GetTextureResource();
+	
 	// Assign texture to the material
 	UMaterialInstanceDynamic* DynamicMaterial = NoisePlane->CreateDynamicMaterialInstance(0, NoisePlane->GetMaterial(0));
-	DynamicMaterial->SetTextureParameterValue("Texture", Texture);
+	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
 	NoisePlane->SetMaterial(0, DynamicMaterial);
-#endif
-	//Since we don't need access to the pixel data anymore free the memory
-	delete[] Pixels;
-	
-	return Texture;
 }
