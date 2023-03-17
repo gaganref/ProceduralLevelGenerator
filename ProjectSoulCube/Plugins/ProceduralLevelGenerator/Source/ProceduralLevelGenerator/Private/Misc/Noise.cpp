@@ -12,40 +12,51 @@ UNoise::UNoise(const FObjectInitializer& ObjectInitializer)
 	
 }
 
-TArray<FFloatArray> UNoise::GenerateNoiseMap(const int32& MapX, const int32& MapY, float Scale, const int& Seed, const int32& Octaves, const float& Persistence, const float& Lacunarity)
+TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWidth, const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const
+                                             FVector2D& Offset)
 {
-	TArray<FFloatArray> NoiseMap;
+	// To avoid zero division error
+	if(Scale <= 0){Scale = 0.0001f;}
 
-	FRandomStream RandomStream = FRandomStream(Seed);
+	const float MapHalfWidth = MapWidth/2.0f;
+	const float MapHalfHeight = MapHeight/2.0f;
+
+	const FRandomStream RandomStream = FRandomStream(Seed);
 	
 	TArray<FVector2D> OctaveOffsets;
 	for(int Itr=0; Itr < Octaves; ++Itr)
 	{
 		FVector2D CurrentOffset;
-		CurrentOffset.X = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream);
-		CurrentOffset.Y = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream);
+		CurrentOffset.X = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream) + Offset.X;
+		CurrentOffset.Y = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream) + Offset.Y;
 		OctaveOffsets.Add(CurrentOffset);
 	}
 	
-	// Make Sure the scale is greater than zero to avoid zero division error.
-	if(Scale <= 0)
-	{
-		Scale = 0.0001f;
-	}
-	
-	for(int Y=0; Y < MapY; ++Y)
+	TArray<FFloatArray> NoiseMap;
+
+	for(int Y=0; Y < MapHeight; ++Y)
 	{
 		FFloatArray CurrArray;
-		for(int X=0; X < MapX; ++X)
+		for(int X=0; X < MapWidth; ++X)
 		{
-			const FVector2D Sample = FVector2D(X, Y)/Scale;
+			float Amplitude = 1.0f;
+			float Frequency = 1.0f;
+			float NoiseHeight = 0.0f;
+			
+			for(int O=0; O < Octaves; ++O)
+			{
+				const float SampleX = (X - MapHalfWidth) / Scale * Frequency + OctaveOffsets[O].X;
+				const float SampleY = (Y - MapHalfHeight) / Scale * Frequency + OctaveOffsets[O].Y;
+				
+				const float PerlinValue = USimplexNoiseBPLibrary::SimplexNoise2D_Raw(SampleX, SampleY); // PerlinValue Range is between [-1,1].
+				NoiseHeight += PerlinValue * Amplitude;
 
-			// getting the perlin value and converting it's range from [-1,1] to [0,1]
-			// float PerlinValue = (USimplexNoiseBPLibrary::SimplexNoise2D(Sample.X, Sample.Y) * 0.5) + 0.5;
-			float NoiseHeight = USimplexNoiseBPLibrary::GetSimplexNoise2D_EX(Sample.X, Sample.Y, Lacunarity, Persistence, Octaves, 1, true);
-
-			// NoiseHeight = FMath::Clamp(NoiseHeight, MIN_flt, MAX_flt);
-			// NoiseHeight = UKismetMathLibrary::NormalizeToRange(NoiseHeight, MIN_flt, MAX_flt);
+				Amplitude *= Persistence;
+				Frequency *= Lacunarity;
+			}
+			// NoiseHeight = NoiseHeight * 0.5f + 0.5f; // To convert NoiseHeight range from [-1,1] to [0,1].
+			NoiseHeight = (NoiseHeight + 2.0f) * 0.25; // To convert NoiseHeight range from [-2,2] to [0,1].
+			NoiseHeight = FMath::Clamp(NoiseHeight, 0.0f, 1.0f);
 			CurrArray.Add(NoiseHeight);
 		}
 		NoiseMap.Add(CurrArray);

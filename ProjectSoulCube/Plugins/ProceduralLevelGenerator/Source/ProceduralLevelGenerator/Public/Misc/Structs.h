@@ -74,3 +74,20 @@ public:
 		return LinearColorArray.Num();
 	}
 };
+
+USTRUCT(BlueprintType)
+struct FTerrainType
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString TerrainName;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Height;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor LinearColor;
+	
+	FTerrainType() = default;
+};

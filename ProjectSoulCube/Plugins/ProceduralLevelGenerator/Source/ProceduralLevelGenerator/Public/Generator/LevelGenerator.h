@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "LevelGenerator.generated.h"
 
+struct FTerrainType;
 class UDynamicTextureComponent;
 struct FFloatArray;
 
@@ -31,15 +32,13 @@ private:
 	UPROPERTY(Category = "Debug", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	bool bDebug = false;
 
-	UPROPERTY(Category = "Debug", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	bool bShowNoisePlane = true;
-
-	UPROPERTY(Category = "Debug", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	bool bShowMapPlane = true;
+	/** Plane where the perlin noise is projected using texture. */
+	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UDynamicTextureComponent> NoiseTextureComponent;
 
 	/** Plane where the perlin noise is projected using texture. */
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UDynamicTextureComponent> DynamicTextureComponent;
+	TObjectPtr<UDynamicTextureComponent> MapTextureComponent;
 	
 public:	
 	// Sets default values for this actor's properties
@@ -55,13 +54,11 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void OnConstruction(const FTransform& Transform) override;
-	virtual void PostActorCreated() override;
-	virtual void PostLoad() override;
-
 protected:
 	void InitLevelGenerator();
 
-	void GenerateMapsOnPlanes(const TArray<FFloatArray>& NoiseMap);
+	void GenerateTextureOnNoisePlane(const TArray<FFloatArray>& NoiseMap);
+	void GenerateTextureOnMapPlane(const TArray<FFloatArray>& NoiseMap);
 	
 public:
 
@@ -70,27 +67,46 @@ public:
 
 
 public:
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
 	int32 Seed = 231;
 	
 	// Total no of rows(→) or total no of cells(■) in each row(→) in the grid.
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	int32 Rows = 10;
 
 	// Total no of columns(↑) or total no of cells(■) in each column(↑) in the grid.
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	int32 Columns = 10;
 
 	// Size of each individual cell (as a cell is a square SizeOnX = SizeOnY)
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.00001f))
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.00001f))
 	float Scale = 0.2f;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
 	int32 Octaves = 4;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1))
 	float Persistence = 0.6f;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	float Lacunarity = 2.3f;
+
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
+	FVector2D Offset;
+
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
+	TArray<FTerrainType> LevelRegions;
+
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
+	bool bShowNoisePlane = false;
+
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
+	bool bShowMapPlane = false;
+	
+	// Use this with caution as changing values very quickly can crash your editor
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
+	bool bGenerateNoisePlaneOnConstruction = false;
+	
+	UFUNCTION(Category = "Level Data", BlueprintCallable, CallInEditor)
+	void GenerateNoiseMap();
 };

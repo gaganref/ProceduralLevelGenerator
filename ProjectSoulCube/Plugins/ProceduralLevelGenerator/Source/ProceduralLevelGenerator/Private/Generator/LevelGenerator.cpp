@@ -4,7 +4,6 @@
 #include "Generator/LevelGenerator.h"
 
 #include "Kismet/KismetMathLibrary.h"
-#include "Kismet/KismetRenderingLibrary.h"
 #include "Misc/DynamicTextureComponent.h"
 #include "Misc/Noise.h"
 #include "Misc/Structs.h"
@@ -44,15 +43,15 @@ ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
 #if WITH_EDITORONLY_DATA
 	NoisePlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Noise Plane"));
 	NoisePlane->SetupAttachment(SceneComponent);
-	NoisePlane->SetVisibility(bShowNoisePlane);
 	
 	MapPlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Map Plane"));
 	MapPlane->SetupAttachment(SceneComponent);
-	MapPlane->SetVisibility(bShowMapPlane);
 #endif
 
-	DynamicTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Dynamic Texture Component"));
-	DynamicTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
+	NoiseTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Noise Texture Component"));
+	NoiseTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
+	MapTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Map Texture Component"));
+	MapTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
 }
 
 // Called when the game starts or when spawned
@@ -72,34 +71,34 @@ void ALevelGenerator::Tick(float DeltaTime)
 void ALevelGenerator::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	
+
+	if(bGenerateNoisePlaneOnConstruction)
+	{
+		InitLevelGenerator();
+	}
+}
+
+void ALevelGenerator::GenerateNoiseMap()
+{
 	InitLevelGenerator();
-}
-
-void ALevelGenerator::PostActorCreated()
-{
-	Super::PostActorCreated();
-
-	// InitLevelGenerator();
-}
-
-void ALevelGenerator::PostLoad()
-{
-	Super::PostLoad();
-
-	// InitLevelGenerator();
 }
 
 void ALevelGenerator::InitLevelGenerator()
 {
-	const TArray<FFloatArray>& NoiseMap = UNoise::GenerateNoiseMap(Rows, Columns, Scale, Seed, Octaves, Persistence, Lacunarity);
-	GenerateMapsOnPlanes(NoiseMap);
+	const TArray<FFloatArray>& NoiseMap = UNoise::GenerateNoiseMap(Seed, Rows, Columns, Scale, Octaves, Persistence, Lacunarity, Offset);
+
+	if(bShowNoisePlane)
+	{
+		GenerateTextureOnNoisePlane(NoiseMap);
+	}
+	if(bShowMapPlane)
+	{
+		GenerateTextureOnMapPlane(NoiseMap);
+	}
 }
 
-void ALevelGenerator::GenerateMapsOnPlanes(const TArray<FFloatArray>& NoiseMap)
-{
-	// TObjectPtr<UTexture2D> NoiseTexture = GenerateTextureFromNoise(NoiseMap);
-
+void ALevelGenerator::GenerateTextureOnNoisePlane(const TArray<FFloatArray>& NoiseMap)
+{	
 	const int32 MapX = NoiseMap[0].Num();
 	const int32 MapY = NoiseMap.Num();
 	TArray<FLinearColorArray> LinearColorArray;
@@ -115,13 +114,51 @@ void ALevelGenerator::GenerateMapsOnPlanes(const TArray<FFloatArray>& NoiseMap)
 		LinearColorArray.Add(LinearColors);
 	}
 
-	DynamicTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
-	// DynamicTextureComponent->SetAllPixels(LinearColorArray);
-	DynamicTextureComponent->UpdateTexture();
-	TObjectPtr<UTexture2D> NoiseTexture = DynamicTextureComponent->GetTextureResource();
+	NoiseTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
+	NoiseTextureComponent->UpdateTexture();
+	const TObjectPtr<UTexture2D> NoiseTexture = NoiseTextureComponent->GetTextureResource();
 	
 	// Assign texture to the material
 	UMaterialInstanceDynamic* DynamicMaterial = NoisePlane->CreateDynamicMaterialInstance(0, NoisePlane->GetMaterial(0));
 	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
 	NoisePlane->SetMaterial(0, DynamicMaterial);
+}
+
+void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& NoiseMap)
+{
+	const int32 MapX = NoiseMap[0].Num();
+	const int32 MapY = NoiseMap.Num();
+	TArray<FLinearColorArray> LinearColorArray;
+	
+	for(int Y=0; Y < MapY; ++Y)
+	{
+		FLinearColorArray LinearColors;
+		for(int X=0; X < MapX; ++X)
+		{
+			const float CurrentHeight = NoiseMap[Y][X];
+			FLinearColor RegionColor = FLinearColor::Red;
+			FString Temp = FString("TempColor");
+			
+			for(const auto& Region : LevelRegions)
+			{
+				if(CurrentHeight <= Region.Height)
+				{
+					Temp = Region.TerrainName;
+					RegionColor = Region.LinearColor;
+					break;
+				}
+			}
+			LinearColors.Add(RegionColor);
+		}
+		LinearColorArray.Add(LinearColors);
+	}
+
+	MapTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
+	MapTextureComponent->UpdateTexture();
+	const TObjectPtr<UTexture2D> NoiseTexture = MapTextureComponent->GetTextureResource();
+	
+	// Assign texture to the material
+	UMaterialInstanceDynamic* DynamicMaterial = MapPlane->CreateDynamicMaterialInstance(0, MapPlane->GetMaterial(0));
+	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
+	MapPlane->SetMaterial(0, DynamicMaterial);
 }

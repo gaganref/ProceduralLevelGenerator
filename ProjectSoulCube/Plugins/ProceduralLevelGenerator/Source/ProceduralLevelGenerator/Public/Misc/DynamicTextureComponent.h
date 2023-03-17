@@ -9,7 +9,7 @@
 struct FFloatArray;
 struct FLinearColorArray;
 
-// Ref: https://gist.github.com/iUltimateLP/baca7aee4b28585b5fd2d0d46b541d95
+// Inspired from Ref: https://gist.github.com/iUltimateLP/baca7aee4b28585b5fd2d0d46b541d95
 // Adjusted the above to fulfill the requirements of the current project use
 
 

@@ -17,5 +17,6 @@ class PROCEDURALLEVELGENERATOR_API UNoise : public UBlueprintFunctionLibrary
 	GENERATED_UCLASS_BODY()
 	
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Noise Map", Keywords = "Perlin Noise Map Generate"), Category = "Noise")
-	static TArray<FFloatArray> GenerateNoiseMap(const int32& MapX, const int32& MapY, float Scale, const int& Seed,  const int32& Octaves = 4, const float& Persistence=0.6f, const float& Lacunarity=2.3f);
+	static TArray<FFloatArray> GenerateNoiseMap(const int& Seed, const int32& MapWidth, const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const
+	                                            FVector2D& Offset);
 };

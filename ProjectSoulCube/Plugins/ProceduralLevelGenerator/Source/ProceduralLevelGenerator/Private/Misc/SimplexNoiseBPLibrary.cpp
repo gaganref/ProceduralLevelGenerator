@@ -1,21 +1,9 @@
 ﻿/*
+
+Ported from https://github.com/devdad/SimplexNoise with few changes
 SimplexNoise 1.2.0
 -----
 DevDad - Afan Olovcic @ www.art-and-code.com - 08/12/2015
-
-This algorithm was originally designed by Ken Perlin, but my code has been
-adapted and extended from the implementation written by Stefan Gustavson (stegu@itn.liu.se)
-and modified to fit to Unreal Engine 4
-
-
-* This is a clean, fast, modern and free Perlin Simplex noise function.
-* If we change float to double it could be even faster but there is no double type in Blueprint
-* All Public Functions are BlueprintCallable so they can be used in every blueprint
-
-
-From DevDad and Dedicated to you and Unreal Community
-Use it free for what ever you want
-I only request that you mention me in the credits for your game in the way that feels most appropriate to you.
 
 */
 
@@ -25,14 +13,13 @@ I only request that you mention me in the credits for your game in the way that 
 // USimplexNoiseBPLibrary
 #define FASTFLOOR(x) ( ((x)>0) ? ((int)x) : (((int)x)-1) )
 
-USimplexNoiseBPLibrary::USimplexNoiseBPLibrary(const class FObjectInitializer& PCIP)
-	: Super(PCIP)
+USimplexNoiseBPLibrary::USimplexNoiseBPLibrary(const class FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 
 }
 
-
-unsigned char USimplexNoiseBPLibrary::perm[512] = { 151,160,137,91,90,15,
+unsigned char USimplexNoiseBPLibrary::Perm[512] = { 151,160,137,91,90,15,
 131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
 190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
 88,237,149,56,87,174,20,125,136,171,168, 68,175,74,165,71,134,139,48,27,166,
@@ -60,28 +47,28 @@ unsigned char USimplexNoiseBPLibrary::perm[512] = { 151,160,137,91,90,15,
 138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180
 };
 
-void USimplexNoiseBPLibrary::setNoiseSeed(const int32& newSeed)
+void USimplexNoiseBPLibrary::SetNoiseSeed(const int32& NewSeed)
 {
-	FMath::RandInit(newSeed);
-	for (uint16 it = 0; it < 256; ++it)
+	FMath::RandInit(NewSeed);
+	for (uint16 Itr = 0; Itr < 256; ++Itr)
 	{
-		uint8 nextNum = FMath::RandRange(0, 255);
-		USimplexNoiseBPLibrary::perm[it] = (unsigned char)nextNum;
-		USimplexNoiseBPLibrary::perm[it + 256] = (unsigned char)nextNum;
+		const uint8 NextNum = FMath::RandRange(0, 255);
+		USimplexNoiseBPLibrary::Perm[Itr] = static_cast<unsigned char>(NextNum);
+		USimplexNoiseBPLibrary::Perm[Itr + 256] = static_cast<unsigned char>(NextNum);
 	}
 }
 
-void USimplexNoiseBPLibrary::setNoiseFromStream(FRandomStream& RandStream)
+void USimplexNoiseBPLibrary::SetNoiseFromStream(FRandomStream& RandStream)
 {
-	for (uint16 it = 0; it < 256; ++it)
+	for (uint16 Itr = 0; Itr < 256; ++Itr)
 	{
-		uint8 nextNum = RandStream.RandRange(0, 255);
-		USimplexNoiseBPLibrary::perm[it] = (unsigned char)nextNum;
-		USimplexNoiseBPLibrary::perm[it + 256] = (unsigned char)nextNum;
+		const uint8 NextNum = RandStream.RandRange(0, 255);
+		USimplexNoiseBPLibrary::Perm[Itr] = static_cast<unsigned char>(NextNum);
+		USimplexNoiseBPLibrary::Perm[Itr + 256] = static_cast<unsigned char>(NextNum);
 	}
 }
 
-static unsigned char simplex[64][4] = {
+static unsigned char Simplex[64][4] = {
 	{ 0,1,2,3 },{ 0,1,3,2 },{ 0,0,0,0 },{ 0,2,3,1 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 1,2,3,0 },
 	{ 0,2,1,3 },{ 0,0,0,0 },{ 0,3,1,2 },{ 0,3,2,1 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 1,3,2,0 },
 	{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },
@@ -92,180 +79,172 @@ static unsigned char simplex[64][4] = {
 	{ 2,1,0,3 },{ 0,0,0,0 },{ 0,0,0,0 },{ 0,0,0,0 },{ 3,1,0,2 },{ 0,0,0,0 },{ 3,2,0,1 },{ 3,2,1,0 } };
 
 
-float USimplexNoiseBPLibrary::_grad(int hash, float x)
+float USimplexNoiseBPLibrary::Grad(const int& Hash, const float& X)
 {
-	int h = hash & 15;
-	float grad = 1.0 + (h & 7);							// Gradient value 1.0, 2.0, ..., 8.0
-	if (h & 8) grad = -grad;							// Set a random sign for the gradient
-	return (grad * x);									// Multiply the gradient with the distance
+	const int H = Hash & 15;
+	float Grad = 1.0 + (H & 7);							// Gradient value 1.0, 2.0, ..., 8.0
+	if (H & 8) Grad = -Grad;							// Set a random sign for the gradient
+	return (Grad * X);									// Multiply the gradient with the distance
 }
 
-
-float USimplexNoiseBPLibrary::_grad(int hash, float x, float y)
+float USimplexNoiseBPLibrary::Grad(const int& Hash, const float& X, const float& Y)
 {
-	int h = hash & 7;									// Convert low 3 bits of hash code
-	float u = h < 4 ? x : y;							// into 8 simple gradient directions,
-	float v = h < 4 ? y : x;							// and compute the dot product with (x,y).
-	return ((h & 1) ? -u : u) + ((h & 2) ? -2.0f*v : 2.0f*v);
+	const int H = Hash & 7;									// Convert low 3 bits of hash code
+	const float U = H < 4 ? X : Y;							// into 8 simple gradient directions,
+	const float V = H < 4 ? Y : X;							// and compute the dot product with (x,y).
+	return ((H & 1) ? -U : U) + ((H & 2) ? -2.0f*V : 2.0f*V);
 }
 
-
-float USimplexNoiseBPLibrary::_grad(int hash, float x, float y, float z)
+float USimplexNoiseBPLibrary::Grad(const int& Hash, const float& X, const float& Y, const float& Z)
 {
-	int h = hash & 15;									// Convert low 4 bits of hash code into 12 simple
-	float u = h < 8 ? x : y;							// gradient directions, and compute dot product.
-	float v = h < 4 ? y : h == 12 || h == 14 ? x : z;	// Fix repeats at h = 12 to 15
-	return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+	const int H = Hash & 15;									// Convert low 4 bits of hash code into 12 simple
+	const float U = H < 8 ? X : Y;							// gradient directions, and compute dot product.
+	const float V = H < 4 ? Y : H == 12 || H == 14 ? X : Z;	// Fix repeats at h = 12 to 15
+	return ((H & 1) ? -U : U) + ((H & 2) ? -V : V);
 }
 
-
-float USimplexNoiseBPLibrary::_grad(int hash, float x, float y, float z, float t)
+float USimplexNoiseBPLibrary::Grad(const int& Hash, const float& X, const float& Y, const float& Z, const float& T)
 {
-	int h = hash & 31;									// Convert low 5 bits of hash code into 32 simple
-	float u = h < 24 ? x : y;							// gradient directions, and compute dot product.
-	float v = h < 16 ? y : z;
-	float w = h < 8 ? z : t;
-	return ((h & 1) ? -u : u) + ((h & 2) ? -v : v) + ((h & 4) ? -w : w);
+	const int H = Hash & 31;									// Convert low 5 bits of hash code into 32 simple
+	const float U = H < 24 ? X : Y;							// gradient directions, and compute dot product.
+	const float V = H < 16 ? Y : Z;
+	const float W = H < 8 ? Z : T;
+	return ((H & 1) ? -U : U) + ((H & 2) ? -V : V) + ((H & 4) ? -W : W);
 }
 
-
-float USimplexNoiseBPLibrary::_simplexNoise1D(float x)
+float USimplexNoiseBPLibrary::SimplexNoise1D_Raw(const float& X)
 {
-	int i0 = FASTFLOOR(x);
-	int i1 = i0 + 1;
-	float x0 = x - i0;
-	float x1 = x0 - 1.0f;
+	const int I0 = FASTFLOOR(X);
+	const int I1 = I0 + 1;
+	const float X0 = X - I0;
+	const float X1 = X0 - 1.0f;
 
-	float n0, n1;
-
-	float t0 = 1.0f - x0 * x0;
+	float T0 = 1.0f - X0 * X0;
 	//  if(t0 < 0.0f) t0 = 0.0f;
-	t0 *= t0;
-	n0 = t0 * t0 * _grad(perm[i0 & 0xff], x0);
+	T0 *= T0;
+	const float N0 = T0 * T0 * Grad(Perm[I0 & 0xff], X0);
 
-	float t1 = 1.0f - x1 * x1;
+	float T1 = 1.0f - X1 * X1;
 	//  if(t1 < 0.0f) t1 = 0.0f;
-	t1 *= t1;
-	n1 = t1 * t1 * _grad(perm[i1 & 0xff], x1);
+	T1 *= T1;
+	const float N1 = T1 * T1 * Grad(Perm[I1 & 0xff], X1);
 	// The maximum value of this noise is 8*(3/4)^4 = 2.53125
 	// A factor of 0.395 would scale to fit exactly within [-1,1], but
 	// we want to match PRMan's 1D noise, so we scale it down some more.
-	return 0.25f * (n0 + n1);
+	return 0.25f * (N0 + N1);
 }
 
-
-float USimplexNoiseBPLibrary::_simplexNoise2D(float x, float y)
+float USimplexNoiseBPLibrary::SimplexNoise2D_Raw(const float& X, const float& Y)
 {
 #define F2 0.366025403f							// F2 = 0.5*(sqrt(3.0)-1.0)
 #define G2 0.211324865f							// G2 = (3.0-Math.sqrt(3.0))/6.0
 
-	float n0, n1, n2;									// Noise contributions from the three corners
+	float N0, N1, N2;									// Noise contributions from the three corners
 	
 	// Skew the input space to determine which simplex cell we're in
 
-	float s = (x + y) * F2;							// Hairy factor for 2D
-	float xs = x + s;
-	float ys = y + s;
-	int i = FASTFLOOR(xs);
-	int j = FASTFLOOR(ys);
+	const float s = (X + Y) * F2;							// Hairy factor for 2D
+	const float Xs = X + s;
+	const float Ys = Y + s;
+	const int i = FASTFLOOR(Xs);
+	const int j = FASTFLOOR(Ys);
 
-	float t = (float)(i + j) * G2;
-	float X0 = i - t;									// Unskew the cell origin back to (x,y) space
-	float Y0 = j - t;
-	float x0 = x - X0;									// The x,y distances from the cell origin
-	float y0 = y - Y0;
+	const float T = static_cast<float>(i + j) * G2;
+	const float X0 = i - T;									// Unskew the cell origin back to (x,y) space
+	const float Y0 = j - T;
+	const float X1 = X - X0;									// The x,y distances from the cell origin
+	const float Y1 = Y - Y0;
 
 	// For the 2D case, the simplex shape is an equilateral triangle.
 	// Determine which simplex we are in.
-	int i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
-	if (x0 > y0) { i1 = 1; j1 = 0; } // lower triangle, XY order: (0,0)->(1,0)->(1,1)
-	else { i1 = 0; j1 = 1; }      // upper triangle, YX order: (0,0)->(0,1)->(1,1)
+	int I1, J1; // Offsets for second (middle) corner of simplex in (i,j) coords
+	if (X1 > Y1) { I1 = 1; J1 = 0; } // lower triangle, XY order: (0,0)->(1,0)->(1,1)
+	else { I1 = 0; J1 = 1; }      // upper triangle, YX order: (0,0)->(0,1)->(1,1)
 
 								  // A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
 								  // a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
 								  // c = (3-sqrt(3))/6
 
-	float x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
-	float y1 = y0 - j1 + G2;
-	float x2 = x0 - 1.0f + 2.0f * G2; // Offsets for last corner in (x,y) unskewed coords
-	float y2 = y0 - 1.0f + 2.0f * G2;
+	const float X2 = X1 - I1 + G2; // Offsets for middle corner in (x,y) unskewed coords
+	const float Y2 = Y1 - J1 + G2;
+	const float X3 = X1 - 1.0f + 2.0f * G2; // Offsets for last corner in (x,y) unskewed coords
+	const float Y3 = Y1 - 1.0f + 2.0f * G2;
 
 	// Wrap the integer indices at 256, to avoid indexing perm[] out of bounds
-	int ii = i & 0xff;
-	int jj = j & 0xff;
+	const int Ii = i & 0xff;
+	const int Jj = j & 0xff;
 
 	// Calculate the contribution from the three corners
-	float t0 = 0.5f - x0 * x0 - y0 * y0;
-	if (t0 < 0.0f) n0 = 0.0f;
+	float T0 = 0.5f - X1 * X1 - Y1 * Y1;
+	if (T0 < 0.0f) N0 = 0.0f;
 	else {
-		t0 *= t0;
-		n0 = t0 * t0 * _grad(perm[ii + perm[jj]], x0, y0);
+		T0 *= T0;
+		N0 = T0 * T0 * Grad(Perm[Ii + Perm[Jj]], X1, Y1);
 	}
 
-	float t1 = 0.5f - x1 * x1 - y1 * y1;
-	if (t1 < 0.0) n1 = 0.0;
+	float T1 = 0.5f - X2 * X2 - Y2 * Y2;
+	if (T1 < 0.0) N1 = 0.0;
 	else {
-		t1 *= t1;
-		n1 = t1 * t1 * _grad(perm[ii + i1 + perm[jj + j1]], x1, y1);
+		T1 *= T1;
+		N1 = T1 * T1 * Grad(Perm[Ii + I1 + Perm[Jj + J1]], X2, Y2);
 	}
 
-	float t2 = 0.5f - x2 * x2 - y2 * y2;
-	if (t2 < 0.0) n2 = 0.0;
+	float T2 = 0.5f - X3 * X3 - Y3 * Y3;
+	if (T2 < 0.0) N2 = 0.0;
 	else {
-		t2 *= t2;
-		n2 = t2 * t2 * _grad(perm[ii + 1 + perm[jj + 1]], x2, y2);
+		T2 *= T2;
+		N2 = T2 * T2 * Grad(Perm[Ii + 1 + Perm[Jj + 1]], X3, Y3);
 	}
 
 	// Add contributions from each corner to get the final noise value.
 	// The result is scaled to return values in the interval [-1,1]
-	return 40.0f / 0.884343445f * (n0 + n1 + n2);	//accurate to e-9 so that values scale to [-1, 1], same acc as F2 G2.
+	return 40.0f / 0.884343445f * (N0 + N1 + N2);	//accurate to e-9 so that values scale to [-1, 1], same acc as F2 G2.
 }
 
-
-float USimplexNoiseBPLibrary::_simplexNoise3D(float x, float y, float z)
+float USimplexNoiseBPLibrary::SimplexNoise3D_Raw(const float& X, const float& Y, const float& Z)
 {
 
 	// Simple skewing factors for the 3D case
 #define F3 0.333333333f
 #define G3 0.166666667f
 
-	float n0, n1, n2, n3; // Noise contributions from the four corners
+	float N0, N1, N2, N3; // Noise contributions from the four corners
 
 						  // Skew the input space to determine which simplex cell we're in
-	float s = (x + y + z) * F3; // Very nice and simple skew factor for 3D
-	float xs = x + s;
-	float ys = y + s;
-	float zs = z + s;
-	int i = FASTFLOOR(xs);
-	int j = FASTFLOOR(ys);
-	int k = FASTFLOOR(zs);
+	const float s = (X + Y + Z) * F3; // Very nice and simple skew factor for 3D
+	const float Xs = X + s;
+	const float Ys = Y + s;
+	const float Zs = Z + s;
+	const int I = FASTFLOOR(Xs);
+	const int J = FASTFLOOR(Ys);
+	const int K = FASTFLOOR(Zs);
 
-	float t = (float)(i + j + k) * G3;
-	float X0 = i - t; // Unskew the cell origin back to (x,y,z) space
-	float Y0 = j - t;
-	float Z0 = k - t;
-	float x0 = x - X0; // The x,y,z distances from the cell origin
-	float y0 = y - Y0;
-	float z0 = z - Z0;
+	const float T = static_cast<float>(I + J + K) * G3;
+	const float X0 = I - T; // Unskew the cell origin back to (x,y,z) space
+	const float Y0 = J - T;
+	const float Z0 = K - T;
+	const float X1 = X - X0; // The x,y,z distances from the cell origin
+	const float Y1 = Y - Y0;
+	const float Z1 = Z - Z0;
 
 	// For the 3D case, the simplex shape is a slightly irregular tetrahedron.
 	// Determine which simplex we are in.
-	int i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
-	int i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+	int I1, J1, K1; // Offsets for second corner of simplex in (i,j,k) coords
+	int I2, J2, K2; // Offsets for third corner of simplex in (i,j,k) coords
 
 					/* This code would benefit from a backport from the GLSL version! */
-	if (x0 >= y0) {
-		if (y0 >= z0)
+	if (X1 >= Y1) {
+		if (Y1 >= Z1)
 		{
-			i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0;
+			I1 = 1; J1 = 0; K1 = 0; I2 = 1; J2 = 1; K2 = 0;
 		} // X Y Z order
-		else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; } // X Z Y order
-		else { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; } // Z X Y order
+		else if (X1 >= Z1) { I1 = 1; J1 = 0; K1 = 0; I2 = 1; J2 = 0; K2 = 1; } // X Z Y order
+		else { I1 = 0; J1 = 0; K1 = 1; I2 = 1; J2 = 0; K2 = 1; } // Z X Y order
 	}
 	else { // x0<y0
-		if (y0 < z0) { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; } // Z Y X order
-		else if (x0 < z0) { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; } // Y Z X order
-		else { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; } // Y X Z order
+		if (Y1 < Z1) { I1 = 0; J1 = 0; K1 = 1; I2 = 0; J2 = 1; K2 = 1; } // Z Y X order
+		else if (X1 < Z1) { I1 = 0; J1 = 1; K1 = 0; I2 = 0; J2 = 1; K2 = 1; } // Y Z X order
+		else { I1 = 0; J1 = 1; K1 = 0; I2 = 1; J2 = 1; K2 = 0; } // Y X Z order
 	}
 
 	// A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
@@ -273,84 +252,83 @@ float USimplexNoiseBPLibrary::_simplexNoise3D(float x, float y, float z)
 	// a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
 	// c = 1/6.
 
-	float x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
-	float y1 = y0 - j1 + G3;
-	float z1 = z0 - k1 + G3;
-	float x2 = x0 - i2 + 2.0f * G3; // Offsets for third corner in (x,y,z) coords
-	float y2 = y0 - j2 + 2.0f * G3;
-	float z2 = z0 - k2 + 2.0f * G3;
-	float x3 = x0 - 1.0f + 3.0f * G3; // Offsets for last corner in (x,y,z) coords
-	float y3 = y0 - 1.0f + 3.0f * G3;
-	float z3 = z0 - 1.0f + 3.0f * G3;
+	const float X2 = X1 - I1 + G3; // Offsets for second corner in (x,y,z) coords
+	const float Y2 = Y1 - J1 + G3;
+	const float Z2 = Z1 - K1 + G3;
+	const float X3 = X1 - I2 + 2.0f * G3; // Offsets for third corner in (x,y,z) coords
+	const float Y3 = Y1 - J2 + 2.0f * G3;
+	const float Z3 = Z1 - K2 + 2.0f * G3;
+	const float X4 = X1 - 1.0f + 3.0f * G3; // Offsets for last corner in (x,y,z) coords
+	const float Y4 = Y1 - 1.0f + 3.0f * G3;
+	const float Z4 = Z1 - 1.0f + 3.0f * G3;
 
 	// Wrap the integer indices at 256, to avoid indexing perm[] out of bounds
-	int ii = i & 0xff;
-	int jj = j & 0xff;
-	int kk = k & 0xff;
+	const int Ii = I & 0xff;
+	const int Jj = J & 0xff;
+	const int Kk = K & 0xff;
 
 	// Calculate the contribution from the four corners
-	float t0 = 0.6f - x0 * x0 - y0 * y0 - z0 * z0;
-	if (t0 < 0.0) n0 = 0.0;
+	float T0 = 0.6f - X1 * X1 - Y1 * Y1 - Z1 * Z1;
+	if (T0 < 0.0) N0 = 0.0;
 	else {
-		t0 *= t0;
-		n0 = t0 * t0 * _grad(perm[ii + perm[jj + perm[kk]]], x0, y0, z0);
+		T0 *= T0;
+		N0 = T0 * T0 * Grad(Perm[Ii + Perm[Jj + Perm[Kk]]], X1, Y1, Z1);
 	}
 
-	float t1 = 0.6f - x1 * x1 - y1 * y1 - z1 * z1;
-	if (t1 < 0.0) n1 = 0.0;
+	float T1 = 0.6f - X2 * X2 - Y2 * Y2 - Z2 * Z2;
+	if (T1 < 0.0) N1 = 0.0;
 	else {
-		t1 *= t1;
-		n1 = t1 * t1 * _grad(perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]], x1, y1, z1);
+		T1 *= T1;
+		N1 = T1 * T1 * Grad(Perm[Ii + I1 + Perm[Jj + J1 + Perm[Kk + K1]]], X2, Y2, Z2);
 	}
 
-	float t2 = 0.6f - x2 * x2 - y2 * y2 - z2 * z2;
-	if (t2 < 0.0) n2 = 0.0;
+	float T2 = 0.6f - X3 * X3 - Y3 * Y3 - Z3 * Z3;
+	if (T2 < 0.0) N2 = 0.0;
 	else {
-		t2 *= t2;
-		n2 = t2 * t2 * _grad(perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]], x2, y2, z2);
+		T2 *= T2;
+		N2 = T2 * T2 * Grad(Perm[Ii + I2 + Perm[Jj + J2 + Perm[Kk + K2]]], X3, Y3, Z3);
 	}
 
-	float t3 = 0.6f - x3 * x3 - y3 * y3 - z3 * z3;
-	if (t3 < 0.0) n3 = 0.0;
+	float T3 = 0.6f - X4 * X4 - Y4 * Y4 - Z4 * Z4;
+	if (T3 < 0.0) N3 = 0.0;
 	else {
-		t3 *= t3;
-		n3 = t3 * t3 * _grad(perm[ii + 1 + perm[jj + 1 + perm[kk + 1]]], x3, y3, z3);
+		T3 *= T3;
+		N3 = T3 * T3 * Grad(Perm[Ii + 1 + Perm[Jj + 1 + Perm[Kk + 1]]], X4, Y4, Z4);
 	}
 
 	// Add contributions from each corner to get the final noise value.
 	// The result is scaled to stay just inside [-1,1]
-	return 32.0f * (n0 + n1 + n2 + n3); // TODO: The scale factor is preliminary!
+	return 32.0f * (N0 + N1 + N2 + N3); // TODO: The scale factor is preliminary!
 }
 
-
-float USimplexNoiseBPLibrary::_simplexNoise4D(float x, float y, float z, float w)
+float USimplexNoiseBPLibrary::SimplexNoise4D_Raw(const float& X, const float& Y, const float& Z, const float& W)
 {
 #define F4 0.309016994f // F4 = (Math.sqrt(5.0)-1.0)/4.0
 #define G4 0.138196601f // G4 = (5.0-Math.sqrt(5.0))/20.0
 
-	float n0, n1, n2, n3, n4; // Noise contributions from the five corners
+	float N0, N1, N2, N3, N4; // Noise contributions from the five corners
 
 							  // Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
-	float s = (x + y + z + w) * F4; // Factor for 4D skewing
-	float xs = x + s;
-	float ys = y + s;
-	float zs = z + s;
-	float ws = w + s;
-	int i = FASTFLOOR(xs);
-	int j = FASTFLOOR(ys);
-	int k = FASTFLOOR(zs);
-	int l = FASTFLOOR(ws);
+	float s = (X + Y + Z + W) * F4; // Factor for 4D skewing
+	float Xs = X + s;
+	float Ys = Y + s;
+	float Zs = Z + s;
+	float Ws = W + s;
+	int I = FASTFLOOR(Xs);
+	int J = FASTFLOOR(Ys);
+	int K = FASTFLOOR(Zs);
+	int L = FASTFLOOR(Ws);
 
-	float t = (i + j + k + l) * G4; // Factor for 4D unskewing
-	float X0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
-	float Y0 = j - t;
-	float Z0 = k - t;
-	float W0 = l - t;
+	float T = (I + J + K + L) * G4; // Factor for 4D unskewing
+	float X0 = I - T; // Unskew the cell origin back to (x,y,z,w) space
+	float Y0 = J - T;
+	float Z0 = K - T;
+	float W0 = L - T;
 
-	float x0 = x - X0;  // The x,y,z,w distances from the cell origin
-	float y0 = y - Y0;
-	float z0 = z - Z0;
-	float w0 = w - W0;
+	float X1 = X - X0;  // The x,y,z,w distances from the cell origin
+	float Y1 = Y - Y0;
+	float Z1 = Z - Z0;
+	float W1 = W - W0;
 
 	// For the 4D case, the simplex is a 4D shape I won't even try to describe.
 	// To find out which of the 24 possible simplices we're in, we need to
@@ -360,274 +338,250 @@ float USimplexNoiseBPLibrary::_simplexNoise4D(float x, float y, float z, float w
 	// First, six pair-wise comparisons are performed between each possible pair
 	// of the four coordinates, and the results are used to add up binary bits
 	// for an integer index.
-	int c1 = (x0 > y0) ? 32 : 0;
-	int c2 = (x0 > z0) ? 16 : 0;
-	int c3 = (y0 > z0) ? 8 : 0;
-	int c4 = (x0 > w0) ? 4 : 0;
-	int c5 = (y0 > w0) ? 2 : 0;
-	int c6 = (z0 > w0) ? 1 : 0;
-	int c = c1 + c2 + c3 + c4 + c5 + c6;
+	int C1 = (X1 > Y1) ? 32 : 0;
+	int C2 = (X1 > Z1) ? 16 : 0;
+	int C3 = (Y1 > Z1) ? 8 : 0;
+	int C4 = (X1 > W1) ? 4 : 0;
+	int C5 = (Y1 > W1) ? 2 : 0;
+	int C6 = (Z1 > W1) ? 1 : 0;
+	int C = C1 + C2 + C3 + C4 + C5 + C6;
 
-	int i1, j1, k1, l1; // The integer offsets for the second simplex corner
-	int i2, j2, k2, l2; // The integer offsets for the third simplex corner
-	int i3, j3, k3, l3; // The integer offsets for the fourth simplex corner
+	int I1, J1, K1, L1; // The integer offsets for the second simplex corner
+	int I2, J2, K2, L2; // The integer offsets for the third simplex corner
+	int I3, J3, K3, L3; // The integer offsets for the fourth simplex corner
 
 						// simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
 						// Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
 						// impossible. Only the 24 indices which have non-zero entries make any sense.
 						// We use a thresholding to set the coordinates in turn from the largest magnitude.
 						// The number 3 in the "simplex" array is at the position of the largest coordinate.
-	i1 = simplex[c][0] >= 3 ? 1 : 0;
-	j1 = simplex[c][1] >= 3 ? 1 : 0;
-	k1 = simplex[c][2] >= 3 ? 1 : 0;
-	l1 = simplex[c][3] >= 3 ? 1 : 0;
+	I1 = Simplex[C][0] >= 3 ? 1 : 0;
+	J1 = Simplex[C][1] >= 3 ? 1 : 0;
+	K1 = Simplex[C][2] >= 3 ? 1 : 0;
+	L1 = Simplex[C][3] >= 3 ? 1 : 0;
 	// The number 2 in the "simplex" array is at the second largest coordinate.
-	i2 = simplex[c][0] >= 2 ? 1 : 0;
-	j2 = simplex[c][1] >= 2 ? 1 : 0;
-	k2 = simplex[c][2] >= 2 ? 1 : 0;
-	l2 = simplex[c][3] >= 2 ? 1 : 0;
+	I2 = Simplex[C][0] >= 2 ? 1 : 0;
+	J2 = Simplex[C][1] >= 2 ? 1 : 0;
+	K2 = Simplex[C][2] >= 2 ? 1 : 0;
+	L2 = Simplex[C][3] >= 2 ? 1 : 0;
 	// The number 1 in the "simplex" array is at the second smallest coordinate.
-	i3 = simplex[c][0] >= 1 ? 1 : 0;
-	j3 = simplex[c][1] >= 1 ? 1 : 0;
-	k3 = simplex[c][2] >= 1 ? 1 : 0;
-	l3 = simplex[c][3] >= 1 ? 1 : 0;
+	I3 = Simplex[C][0] >= 1 ? 1 : 0;
+	J3 = Simplex[C][1] >= 1 ? 1 : 0;
+	K3 = Simplex[C][2] >= 1 ? 1 : 0;
+	L3 = Simplex[C][3] >= 1 ? 1 : 0;
 	// The fifth corner has all coordinate offsets = 1, so no need to look that up.
 
-	float x1 = x0 - i1 + G4; // Offsets for second corner in (x,y,z,w) coords
-	float y1 = y0 - j1 + G4;
-	float z1 = z0 - k1 + G4;
-	float w1 = w0 - l1 + G4;
-	float x2 = x0 - i2 + 2.0f * G4; // Offsets for third corner in (x,y,z,w) coords
-	float y2 = y0 - j2 + 2.0f * G4;
-	float z2 = z0 - k2 + 2.0f * G4;
-	float w2 = w0 - l2 + 2.0f * G4;
-	float x3 = x0 - i3 + 3.0f * G4; // Offsets for fourth corner in (x,y,z,w) coords
-	float y3 = y0 - j3 + 3.0f * G4;
-	float z3 = z0 - k3 + 3.0f * G4;
-	float w3 = w0 - l3 + 3.0f * G4;
-	float x4 = x0 - 1.0f + 4.0f * G4; // Offsets for last corner in (x,y,z,w) coords
-	float y4 = y0 - 1.0f + 4.0f * G4;
-	float z4 = z0 - 1.0f + 4.0f * G4;
-	float w4 = w0 - 1.0f + 4.0f * G4;
+	float X2 = X1 - I1 + G4; // Offsets for second corner in (x,y,z,w) coords
+	float Y2 = Y1 - J1 + G4;
+	float Z2 = Z1 - K1 + G4;
+	float W2 = W1 - L1 + G4;
+	float X3 = X1 - I2 + 2.0f * G4; // Offsets for third corner in (x,y,z,w) coords
+	float Y3 = Y1 - J2 + 2.0f * G4;
+	float Z3 = Z1 - K2 + 2.0f * G4;
+	float W3 = W1 - L2 + 2.0f * G4;
+	float X4 = X1 - I3 + 3.0f * G4; // Offsets for fourth corner in (x,y,z,w) coords
+	float Y4 = Y1 - J3 + 3.0f * G4;
+	float Z4 = Z1 - K3 + 3.0f * G4;
+	float W4 = W1 - L3 + 3.0f * G4;
+	float X5 = X1 - 1.0f + 4.0f * G4; // Offsets for last corner in (x,y,z,w) coords
+	float Y5 = Y1 - 1.0f + 4.0f * G4;
+	float Z5 = Z1 - 1.0f + 4.0f * G4;
+	float W5 = W1 - 1.0f + 4.0f * G4;
 
 	// Wrap the integer indices at 256, to avoid indexing perm[] out of bounds
-	int ii = i & 0xff;
-	int jj = j & 0xff;
-	int kk = k & 0xff;
-	int ll = l & 0xff;
+	int Ii = I & 0xff;
+	int Jj = J & 0xff;
+	int Kk = K & 0xff;
+	int Ll = L & 0xff;
 
 	// Calculate the contribution from the five corners
-	float t0 = 0.6f - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
-	if (t0 < 0.0) n0 = 0.0;
+	float T0 = 0.6f - X1 * X1 - Y1 * Y1 - Z1 * Z1 - W1 * W1;
+	if (T0 < 0.0) N0 = 0.0;
 	else {
-		t0 *= t0;
-		n0 = t0 * t0 * _grad(perm[ii + perm[jj + perm[kk + perm[ll]]]], x0, y0, z0, w0);
+		T0 *= T0;
+		N0 = T0 * T0 * Grad(Perm[Ii + Perm[Jj + Perm[Kk + Perm[Ll]]]], X1, Y1, Z1, W1);
 	}
 
-	float t1 = 0.6f - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
-	if (t1 < 0.0) n1 = 0.0;
+	float T1 = 0.6f - X2 * X2 - Y2 * Y2 - Z2 * Z2 - W2 * W2;
+	if (T1 < 0.0) N1 = 0.0;
 	else {
-		t1 *= t1;
-		n1 = t1 * t1 * _grad(perm[ii + i1 + perm[jj + j1 + perm[kk + k1 + perm[ll + l1]]]], x1, y1, z1, w1);
+		T1 *= T1;
+		N1 = T1 * T1 * Grad(Perm[Ii + I1 + Perm[Jj + J1 + Perm[Kk + K1 + Perm[Ll + L1]]]], X2, Y2, Z2, W2);
 	}
 
-	float t2 = 0.6f - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
-	if (t2 < 0.0) n2 = 0.0;
+	float T2 = 0.6f - X3 * X3 - Y3 * Y3 - Z3 * Z3 - W3 * W3;
+	if (T2 < 0.0) N2 = 0.0;
 	else {
-		t2 *= t2;
-		n2 = t2 * t2 * _grad(perm[ii + i2 + perm[jj + j2 + perm[kk + k2 + perm[ll + l2]]]], x2, y2, z2, w2);
+		T2 *= T2;
+		N2 = T2 * T2 * Grad(Perm[Ii + I2 + Perm[Jj + J2 + Perm[Kk + K2 + Perm[Ll + L2]]]], X3, Y3, Z3, W3);
 	}
 
-	float t3 = 0.6f - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
-	if (t3 < 0.0) n3 = 0.0;
+	float T3 = 0.6f - X4 * X4 - Y4 * Y4 - Z4 * Z4 - W4 * W4;
+	if (T3 < 0.0) N3 = 0.0;
 	else {
-		t3 *= t3;
-		n3 = t3 * t3 * _grad(perm[ii + i3 + perm[jj + j3 + perm[kk + k3 + perm[ll + l3]]]], x3, y3, z3, w3);
+		T3 *= T3;
+		N3 = T3 * T3 * Grad(Perm[Ii + I3 + Perm[Jj + J3 + Perm[Kk + K3 + Perm[Ll + L3]]]], X4, Y4, Z4, W4);
 	}
 
-	float t4 = 0.6f - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
-	if (t4 < 0.0) n4 = 0.0;
+	float T4 = 0.6f - X5 * X5 - Y5 * Y5 - Z5 * Z5 - W5 * W5;
+	if (T4 < 0.0) N4 = 0.0;
 	else {
-		t4 *= t4;
-		n4 = t4 * t4 * _grad(perm[ii + 1 + perm[jj + 1 + perm[kk + 1 + perm[ll + 1]]]], x4, y4, z4, w4);
+		T4 *= T4;
+		N4 = T4 * T4 * Grad(Perm[Ii + 1 + Perm[Jj + 1 + Perm[Kk + 1 + Perm[Ll + 1]]]], X5, Y5, Z5, W5);
 	}
 
 	// Sum up and scale the result to cover the range [-1,1]
-	return 27.0f * (n0 + n1 + n2 + n3 + n4);
-}
-
-int USimplexNoiseBPLibrary::_polygonise(FCell cell, float isolevel, FTriangle* triangles)
-{
-	return 0;
+	return 27.0f * (N0 + N1 + N2 + N3 + N4);
 }
 
 // 1D Simplex Noise
-
-float USimplexNoiseBPLibrary::SimplexNoise1D(float x, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoise1D(const float& X, const float& InFactor)
 {
-	return (float)_simplexNoise1D(x * inFactor);
+	return (float)SimplexNoise1D_Raw(X * InFactor);
 }
-
-
 
 // 2D Simplex Noise
-
-float USimplexNoiseBPLibrary::SimplexNoise2D(float x, float y, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoise2D(const float& X, const float& Y, const float& InFactor)
 {
-	return (float)_simplexNoise2D(x * inFactor, y * inFactor);
+	return (float)SimplexNoise2D_Raw(X * InFactor, Y * InFactor);
 }
-
-
-
 
 // 3D Simplex Noise
-float USimplexNoiseBPLibrary::SimplexNoise3D(float x, float y, float z, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoise3D(const float& X, const float& Y, const float& Z, const float& InFactor)
 {
-	return (float)_simplexNoise3D(x * inFactor, y * inFactor, z* inFactor);
+	return (float)SimplexNoise3D_Raw(X * InFactor, Y * InFactor, Z* InFactor);
 }
 
-
-
-
 // 4D Simplex Noise
-float USimplexNoiseBPLibrary::SimplexNoise4D(float x, float y, float z, float w, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoise4D(const float& X, const float& Y, const float& Z, const float& W, const float& InFactor)
 {
-	return (float)_simplexNoise4D(x * inFactor, y * inFactor, z * inFactor, w * inFactor);
+	return (float)SimplexNoise4D_Raw(X * InFactor, Y * InFactor, Z * InFactor, W * InFactor);
 }
 
 // Scaled by float value
 
-float USimplexNoiseBPLibrary::SimplexNoiseScaled1D(float x, float scaleOut, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseScaled1D(const float& X, const float& ScaleOut, const float& InFactor)
 {
-	return _simplexNoise1D(x * inFactor) * scaleOut;
+	return SimplexNoise1D_Raw(X * InFactor) * ScaleOut;
 }
 
 
-float USimplexNoiseBPLibrary::SimplexNoiseScaled2D(float x, float y, float scaleOut, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseScaled2D(const float& X, const float& Y, const float& ScaleOut, const float& InFactor)
 {
-	return _simplexNoise2D(x * inFactor, y * inFactor) * scaleOut;
+	return SimplexNoise2D_Raw(X * InFactor, Y * InFactor) * ScaleOut;
 }
 
 
-float USimplexNoiseBPLibrary::SimplexNoiseScaled3D(float x, float y, float z, float scaleOut, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseScaled3D(const float& X, const float& Y, const float& Z, const float& ScaleOut, const float& InFactor)
 {
-	return _simplexNoise3D((x * inFactor), (y * inFactor), (z * inFactor)) * scaleOut;
+	return SimplexNoise3D_Raw((X * InFactor), (Y * InFactor), (Z * InFactor)) * ScaleOut;
 }
 
 
-float USimplexNoiseBPLibrary::SimplexNoiseScaled4D(float x, float y, float z, float w, float scaleOut, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseScaled4D(const float& X, const float& Y, const float& Z, const float& W, const float& ScaleOut, const float& InFactor)
 {
-	return _simplexNoise4D(x * inFactor, y * inFactor, z * inFactor, w * inFactor) * scaleOut;
+	return SimplexNoise4D_Raw(X * InFactor, Y * InFactor, Z * InFactor, W * InFactor) * ScaleOut;
 };
 
 // Return value in Range between two float numbers
 // Return Value is scaled by difference between rangeMin & rangeMax value
 
-
-float USimplexNoiseBPLibrary::SimplexNoiseInRange1D(float x, float rangeMin, float rangeMax, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseInRange1D(const float& X, const float& RangeMin, float RangeMax, const float& InFactor)
 {
-	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	float nval = (SimplexNoise1D(x, inFactor) + 1) * 0.5f;
-	return nval * (rangeMax - rangeMin) + rangeMin;
+	if (RangeMax < RangeMin)RangeMax = RangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
+	const float NoiseValue = (SimplexNoise1D(X, InFactor) + 1) * 0.5f;
+	return NoiseValue * (RangeMax - RangeMin) + RangeMin;
 }
 
 
-float USimplexNoiseBPLibrary::SimplexNoiseInRange2D(float x, float y, float rangeMin, float rangeMax, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseInRange2D(const float& X, const float& Y, const float& RangeMin, float RangeMax, const float& InFactor)
 {
-	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	float nval = (SimplexNoise2D(x, y, inFactor) + 1) * 0.5f;
-	return nval * (rangeMax - rangeMin) + rangeMin;
+	if (RangeMax < RangeMin)RangeMax = RangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
+	const float NoiseValue = (SimplexNoise2D(X, Y, InFactor) + 1) * 0.5f;
+	return NoiseValue * (RangeMax - RangeMin) + RangeMin;
 }
 
 
-float USimplexNoiseBPLibrary::SimplexNoiseInRange3D(float x, float y, float z, float rangeMin, float rangeMax, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseInRange3D(const float& X, const float& Y, const float& Z, const float& RangeMin, float RangeMax, const float& InFactor)
 {
-	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	float nval = (SimplexNoise3D(x, y, z, inFactor) + 1) * 0.5f;
- 	return nval * (rangeMax - rangeMin) + rangeMin;
+	if (RangeMax < RangeMin)RangeMax = RangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
+	const float NoiseValue = (SimplexNoise3D(X, Y, Z, InFactor) + 1) * 0.5f;
+ 	return NoiseValue * (RangeMax - RangeMin) + RangeMin;
 }
 
 
-float USimplexNoiseBPLibrary::SimplexNoiseInRange4D(float x, float y, float z, float w, float rangeMin, float rangeMax, float inFactor)
+float USimplexNoiseBPLibrary::SimplexNoiseInRange4D(const float& X, const float& Y, const float& Z, const float& W, const float& RangeMin, float RangeMax, const float&
+                                                    InFactor)
 {
-	if (rangeMax < rangeMin)rangeMax = rangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
-	float nval = (SimplexNoise4D(x, y, z, w, inFactor) + 1) * 0.5f;
-	return nval * (rangeMax - rangeMin) + rangeMin;
+	if (RangeMax < RangeMin)RangeMax = RangeMin + 1.0f; // prevent negative numbers in that case we will return value between 0 - 1
+	const float NoiseValue = (SimplexNoise4D(X, Y, Z, W, InFactor) + 1) * 0.5f;
+	return NoiseValue * (RangeMax - RangeMin) + RangeMin;
 }
 
-// Get 1D Simplex Noise ( with lacunarity, persistance, octaves )
-float USimplexNoiseBPLibrary::GetSimplexNoise1D_EX(float x, float lacunarity, float persistance, int octaves, float inFactor, bool ZeroToOne)
+// Get 1D Simplex Noise ( with lacunarity, persistence, octaves )
+float USimplexNoiseBPLibrary::SimplexNoise1D_Ex(const float& X, const float& Lacunarity, const float& Persistence, const int& Octaves, const float& InFactor, const
+                                                   bool ZeroToOne)
 {
-	int i;
-	float frequency = 1.0f;
-	float amplitude = 1.0f;
-	float sum = 0.0f;
+	float Frequency = 1.0f;
+	float Amplitude = 1.0f;
+	float Sum = 0.0f;
 
-	for (i = 0; i < octaves; i++) {
-		sum += _simplexNoise1D(x * inFactor * frequency) * amplitude;
-		frequency *= lacunarity;
-		amplitude *= persistance;
+	for (int Itr = 0; Itr < Octaves; Itr++) {
+		Sum += SimplexNoise1D_Raw(X * InFactor * Frequency) * Amplitude;
+		Frequency *= Lacunarity;
+		Amplitude *= Persistence;
 	}
 
-	return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+	return ZeroToOne ? Sum * 0.5f + 0.5f : Sum;
 }
 
-
-
-// Get 2D Simplex Noise ( with lacunarity, persistance, octaves )
-
-float USimplexNoiseBPLibrary::GetSimplexNoise2D_EX(float x, float y, float lacunarity, float persistance, int octaves, float inFactor, bool ZeroToOne )
+// Get 2D Simplex Noise ( with lacunarity, persistence, octaves )
+float USimplexNoiseBPLibrary::SimplexNoise2D_Ex(const float& X, const float& Y, const float& Lacunarity, const float& Persistence, const int& Octaves, const float&
+                                                   InFactor, const bool ZeroToOne)
 {
-	int i;
-	float frequency = 1.0f;
-	float amplitude = 1.0f;
-	float sum = 0.0f;
+	float Frequency = 1.0f;
+	float Amplitude = 1.0f;
+	float Sum = 0.0f;
 
-	for (i = 0; i < octaves; i++) {
-		sum += _simplexNoise2D(x* inFactor * frequency, y* inFactor * frequency) * amplitude;
-		frequency *= lacunarity;
-		amplitude *= persistance;
+	for (int Itr = 0; Itr < Octaves; Itr++) {
+		Sum += SimplexNoise2D_Raw(X* InFactor * Frequency, Y* InFactor * Frequency) * Amplitude;
+		Frequency *= Lacunarity;
+		Amplitude *= Persistence;
 	}
 	
-	return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+	return ZeroToOne ? Sum * 0.5f + 0.5f : Sum;
 }
 
-
-
-
-// Get 3D Simplex Noise ( with lacunarity, persistance, octaves )
-float USimplexNoiseBPLibrary::GetSimplexNoise3D_EX(float x, float y, float z, float lacunarity, float persistance, int octaves, float inFactor, bool ZeroToOne)
+// Get 3D Simplex Noise ( with lacunarity, persistence, octaves )
+float USimplexNoiseBPLibrary::SimplexNoise3D_Ex(const float& X, const float& Y, const float& Z, const float& Lacunarity, const float& Persistence, const int& Octaves, const
+                                                   float& InFactor, const bool ZeroToOne)
 {
-	int i;
-	float frequency = 1.0f;
-	float amplitude = 1.0f;
-	float sum = 0.0f;
+	float Frequency = 1.0f;
+	float Amplitude = 1.0f;
+	float Sum = 0.0f;
 
-	for (i = 0; i < octaves; i++) {
-		sum += _simplexNoise3D(x* inFactor * frequency, y* inFactor * frequency, z* inFactor * frequency) * amplitude;
-		frequency *= lacunarity;
-		amplitude *= persistance;
+	for (int Itr = 0; Itr < Octaves; Itr++) {
+		Sum += SimplexNoise3D_Raw(X* InFactor * Frequency, Y* InFactor * Frequency, Z* InFactor * Frequency) * Amplitude;
+		Frequency *= Lacunarity;
+		Amplitude *= Persistence;
 	}
 
-	return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+	return ZeroToOne ? Sum * 0.5f + 0.5f : Sum;
 }
 
-
-
-
-// Get Get 4D Simplex Noise ( with lacunarity, persistance, octaves )
-float USimplexNoiseBPLibrary::GetSimplexNoise4D_EX(float x, float y, float z, float w, float lacunarity, float persistance, int octaves, float inFactor, bool ZeroToOne)
+// Get Get 4D Simplex Noise ( with lacunarity, persistence, octaves )
+float USimplexNoiseBPLibrary::SimplexNoise4D_Ex(const float& X, const float& Y, const float& Z, const float& W, const float& Lacunarity, const float& Persistence, const
+                                                   int& Octaves, const float& InFactor, const bool ZeroToOne)
 {
-	int i;
-	float frequency = 1.0f;
-	float amplitude = 1.0f;
-	float sum = 0.0f;
+	float Frequency = 1.0f;
+	float Amplitude = 1.0f;
+	float Sum = 0.0f;
 
-	for (i = 0; i < octaves; i++) {
-		sum += _simplexNoise4D(x* inFactor * frequency, y* inFactor * frequency, z* inFactor * frequency, w* inFactor * frequency) * amplitude;
-		frequency *= lacunarity;
-		amplitude *= persistance;
+	for (int Itr = 0; Itr < Octaves; Itr++) {
+		Sum += SimplexNoise4D_Raw(X* InFactor * Frequency, Y* InFactor * Frequency, Z* InFactor * Frequency, W* InFactor * Frequency) * Amplitude;
+		Frequency *= Lacunarity;
+		Amplitude *= Persistence;
 	}
 
-	return ZeroToOne ? sum * 0.5f + 0.5f : sum;
+	return ZeroToOne ? Sum * 0.5f + 0.5f : Sum;
 }

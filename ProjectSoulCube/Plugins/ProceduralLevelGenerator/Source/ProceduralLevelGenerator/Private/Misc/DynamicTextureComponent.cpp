@@ -55,40 +55,6 @@ void UDynamicTextureComponent::Initialize(const int32& InWidth, const int32& InH
 	
 	bIsInitializing = false;
 	bComponentInitialized = true;
-	
-	// if(bIsInitializing)
-	// {
-	// 	return;
-	// }
-	// bIsInitializing = true;
-	//
-	// if(bComponentInitialized)
-	// {
-	// 	ReInitialize(InWidth, InHeight, InClearColor, PixelColors, FilterMethod);
-	// 	return;
-	// }
-	//
-	// // Store the parameters
-	// TextureWidth = InWidth;
-	// TextureHeight = InHeight;
-	// ClearColor = InClearColor;
-	//
-	// // Create the UTexture2D to render to
-	// Texture = CreateTextureInternal(TextureWidth, TextureHeight, FilterMethod);
-	//
-	// // Create the proxy object for updating the texture region
-	// UpdateTextureRegionProxy = MakeUnique<FUpdateTextureRegion2D>(0, 0, 0, 0, TextureWidth, TextureHeight);
-	//
-	// // Size of the image pixel buffer
-	// const SIZE_T BufferSize = TextureWidth * TextureHeight * DYNAMIC_TEXTURE_BYTES_PER_PIXEL;
-	// PixelBuffer = MakeUnique<uint8[]>(BufferSize);
-	//
-	// // Initially clear the texture
-	// InitializePixelColorsInternal(PixelColors);
-	// // Clear();
-	//
-	// bComponentInitialized = true;
-	// bIsInitializing = false;
 }
 
 void UDynamicTextureComponent::ReInitialize(const int32& InWidth, const int32& InHeight, const FLinearColor& InClearColor,
@@ -117,7 +83,6 @@ void UDynamicTextureComponent::ReInitialize(const int32& InWidth, const int32& I
 	// Do not re initialize the texture if it's size is not changed.
 	if((TextureWidth == InWidth) && (TextureHeight == InHeight))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Test Gone Wrong"));
 		ClearColor = InClearColor;
 		// Texture->Filter = FilterMethod;	// use this if required.
 		InitializePixelColorsInternal(PixelColors);
@@ -136,38 +101,6 @@ void UDynamicTextureComponent::ReInitialize(const int32& InWidth, const int32& I
 	InitializePixelColorsInternal(PixelColors);
 	
 	bIsInitializing = false;
-	
-	// ClearColor = InClearColor;
-	//
-	// // Do not re initialize the texture if it's size is not changed.
-	// if((TextureWidth == InWidth) && (TextureHeight == InHeight))
-	// {
-	// 	InitializePixelColorsInternal(PixelColors);
-	// 	// Clear();
-	// 	return;
-	// }
-	//
-	// // Store the parameters
-	// TextureWidth = InWidth;
-	// TextureHeight = InHeight;
-	//
-	// Texture = CreateTextureInternal(TextureWidth, TextureHeight, FilterMethod);
-	//
-	// // Create the proxy object for updating the texture region
-	// if(UpdateTextureRegionProxy.IsValid())
-	// {
-	// 	UpdateTextureRegionProxy.Get()->Width = TextureWidth;
-	// 	UpdateTextureRegionProxy.Get()->Height = TextureHeight;
-	// }
-	//
-	// // Size of the image pixel buffer
-	// const SIZE_T BufferSize = TextureWidth * TextureHeight * DYNAMIC_TEXTURE_BYTES_PER_PIXEL;
-	// PixelBuffer.Reset();
-	// PixelBuffer = MakeUnique<uint8[]>(BufferSize);
-	//
-	// // Initially clear the texture
-	// InitializePixelColorsInternal(PixelColors);
-	// // Clear();
 }
 
 void UDynamicTextureComponent::SetPixel(const int32& X, const int32& Y, const FLinearColor& Color) const
@@ -178,7 +111,7 @@ void UDynamicTextureComponent::SetPixel(const int32& X, const int32& Y, const FL
 	// Set the pixel (note that linear color uses floats between 0..1, but a uint8 ranges from 0..255)
 	SetPixelInternal(Ptr, Color.R * 255, Color.G * 255, Color.B * 255, Color.A * 255);
 
-	UpdateTexture();
+	// UpdateTexture();
 }
 
 void UDynamicTextureComponent::Fill(const FLinearColor& Color) const
@@ -195,7 +128,7 @@ void UDynamicTextureComponent::Fill(const FLinearColor& Color) const
 		Ptr += DYNAMIC_TEXTURE_BYTES_PER_PIXEL;
 	}
 
-	UpdateTexture();
+	// UpdateTexture();
 }
 
 void UDynamicTextureComponent::SetAllPixels(const TArray<FLinearColorArray>& Colors) const
@@ -225,7 +158,7 @@ void UDynamicTextureComponent::SetAllPixels(const TArray<FLinearColorArray>& Col
 		}	
 	}
 
-	UpdateTexture();
+	// UpdateTexture();
 }
 
 void UDynamicTextureComponent::FillRect(const int32& X, const int32& Y, const int32& Width, const int32& Height, const FLinearColor& Color) const
@@ -246,7 +179,7 @@ void UDynamicTextureComponent::FillRect(const int32& X, const int32& Y, const in
 		}
 	}
 
-	UpdateTexture();
+	// UpdateTexture();
 }
 
 void UDynamicTextureComponent::Clear() const
@@ -262,7 +195,7 @@ UTexture2D* UDynamicTextureComponent::GetTextureResource() const
 
 void UDynamicTextureComponent::SetPixelInternal(uint8*& Ptr, const uint8& Red, const uint8& Green, const uint8& Blue, const uint8& Alpha)
 {
-	// Pixels are stored in BGRA format
+	// Pixels are stored in BGRA format, Don't change the order
 	*Ptr = Blue;
 	*(Ptr + 1) = Green;
 	*(Ptr + 2) = Red;
