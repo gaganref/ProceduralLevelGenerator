@@ -3,7 +3,6 @@
 #include "Misc/Noise.h"
 
 #include "Kismet/KismetMathLibrary.h"
-#include "Misc/SimplexNoiseBPLibrary.h"
 #include "Misc/Structs.h"
 
 UNoise::UNoise(const FObjectInitializer& ObjectInitializer)
@@ -33,7 +32,7 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 	}
 	
 	TArray<FFloatArray> NoiseMap;
-
+	
 	for(int Y=0; Y < MapHeight; ++Y)
 	{
 		FFloatArray CurrArray;
@@ -45,22 +44,19 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 			
 			for(int O=0; O < Octaves; ++O)
 			{
-				const float SampleX = (X - MapHalfWidth) / Scale * Frequency + OctaveOffsets[O].X;
-				const float SampleY = (Y - MapHalfHeight) / Scale * Frequency + OctaveOffsets[O].Y;
-				
-				const float PerlinValue = USimplexNoiseBPLibrary::SimplexNoise2D_Raw(SampleX, SampleY); // PerlinValue Range is between [-1,1].
+				const FVector2D Sample = FVector2D((X - MapHalfWidth), (Y - MapHalfHeight)) / Scale * Frequency + OctaveOffsets[O];
+				const float PerlinValue = FMath::PerlinNoise2D(Sample); // PerlinValue Range is between [-1,1].
 				NoiseHeight += PerlinValue * Amplitude;
 
 				Amplitude *= Persistence;
 				Frequency *= Lacunarity;
 			}
-			// NoiseHeight = NoiseHeight * 0.5f + 0.5f; // To convert NoiseHeight range from [-1,1] to [0,1].
-			NoiseHeight = (NoiseHeight + 2.0f) * 0.25; // To convert NoiseHeight range from [-2,2] to [0,1].
-			NoiseHeight = FMath::Clamp(NoiseHeight, 0.0f, 1.0f);
+			
+			NoiseHeight = NoiseHeight * 0.5f + 0.5f; // Normalize the perlin value to be in between [0,1].
 			CurrArray.Add(NoiseHeight);
 		}
 		NoiseMap.Add(CurrArray);
 	}
-	
+
 	return NoiseMap;
 }

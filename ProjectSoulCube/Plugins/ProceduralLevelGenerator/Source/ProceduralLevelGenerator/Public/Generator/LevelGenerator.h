@@ -9,6 +9,7 @@
 struct FTerrainType;
 class UDynamicTextureComponent;
 struct FFloatArray;
+class UCustomProceduralMeshComponent;
 
 UCLASS()
 class PROCEDURALLEVELGENERATOR_API ALevelGenerator : public AActor
@@ -39,6 +40,10 @@ private:
 	/** Plane where the perlin noise is projected using texture. */
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDynamicTextureComponent> MapTextureComponent;
+
+	/** Plane where the perlin noise is projected using texture. */
+	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCustomProceduralMeshComponent> ProceduralMeshComponent;
 	
 public:	
 	// Sets default values for this actor's properties

@@ -82,12 +82,58 @@ struct FTerrainType
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString TerrainName;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Height;
+	float MinHeight;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin=0.0f, ClampMax=1.0f))
+	float MaxHeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FLinearColor LinearColor;
 	
 	FTerrainType() = default;
+};
+
+USTRUCT(BlueprintType)
+struct FTerrainTypeArray
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FTerrainType> Terrains;
+
+	FTerrainType& operator[] (const int32& Index)
+	{
+		return Terrains[Index];
+	}
+
+	const FTerrainType& operator[] (const int32& Index) const
+	{
+		return Terrains[Index];
+	}
+
+	void Add(FTerrainType& Value)
+	{
+		float CurrentMinHeight = 0.0f;
+		for(int Itr=0; Itr<Terrains.Num(); ++Itr)
+		{
+			if(Value.MaxHeight <= Terrains[Itr].MaxHeight)
+			{
+				Value.MinHeight = CurrentMinHeight;
+				Terrains.Insert(Value, Itr);
+			}
+			else
+			{
+				CurrentMinHeight = Terrains[Itr].MaxHeight;
+			}
+		}
+		Value.MinHeight = CurrentMinHeight;
+		Terrains.Add(Value);
+	}
+
+	int32 Num() const
+	{
+		return Terrains.Num();
+	}
 };

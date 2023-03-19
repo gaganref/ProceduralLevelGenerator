@@ -4,6 +4,7 @@
 #include "Generator/LevelGenerator.h"
 
 #include "Kismet/KismetMathLibrary.h"
+#include "Misc/CustomProceduralMeshComponent.h"
 #include "Misc/DynamicTextureComponent.h"
 #include "Misc/Noise.h"
 #include "Misc/Structs.h"
@@ -50,8 +51,12 @@ ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
 
 	NoiseTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Noise Texture Component"));
 	NoiseTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
+
 	MapTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Map Texture Component"));
 	MapTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
+
+	ProceduralMeshComponent = CreateDefaultSubobject<UCustomProceduralMeshComponent>(TEXT("Procedural Mesh Component"));
+	FProceduralMeshComponentDetails
 }
 
 // Called when the game starts or when spawned
@@ -141,7 +146,7 @@ void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& Noise
 			
 			for(const auto& Region : LevelRegions)
 			{
-				if(CurrentHeight <= Region.Height)
+				if(CurrentHeight <= Region.MaxHeight)
 				{
 					Temp = Region.TerrainName;
 					RegionColor = Region.LinearColor;
