@@ -47,12 +47,13 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 				const FVector2D Sample = FVector2D((X - MapHalfWidth), (Y - MapHalfHeight)) / Scale * Frequency + OctaveOffsets[O];
 				const float PerlinValue = FMath::PerlinNoise2D(Sample); // PerlinValue Range is between [-1,1].
 				NoiseHeight += PerlinValue * Amplitude;
-
+	
 				Amplitude *= Persistence;
 				Frequency *= Lacunarity;
 			}
 			
 			NoiseHeight = NoiseHeight * 0.5f + 0.5f; // Normalize the perlin value to be in between [0,1].
+			NoiseHeight = FMath::Clamp(NoiseHeight, 0.0f, 1.0f);
 			CurrArray.Add(NoiseHeight);
 		}
 		NoiseMap.Add(CurrArray);

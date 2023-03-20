@@ -56,7 +56,6 @@ ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
 	MapTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
 
 	ProceduralMeshComponent = CreateDefaultSubobject<UCustomProceduralMeshComponent>(TEXT("Procedural Mesh Component"));
-	FProceduralMeshComponentDetails
 }
 
 // Called when the game starts or when spawned
@@ -83,7 +82,7 @@ void ALevelGenerator::OnConstruction(const FTransform& Transform)
 	}
 }
 
-void ALevelGenerator::GenerateNoiseMap()
+void ALevelGenerator::GenerateMap()
 {
 	InitLevelGenerator();
 }
@@ -100,12 +99,14 @@ void ALevelGenerator::InitLevelGenerator()
 	{
 		GenerateTextureOnMapPlane(NoiseMap);
 	}
+	
 }
 
 void ALevelGenerator::GenerateTextureOnNoisePlane(const TArray<FFloatArray>& NoiseMap)
 {	
 	const int32 MapX = NoiseMap[0].Num();
 	const int32 MapY = NoiseMap.Num();
+	
 	TArray<FLinearColorArray> LinearColorArray;
 	
 	for(int Y=0; Y < MapY; ++Y)
@@ -133,6 +134,7 @@ void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& Noise
 {
 	const int32 MapX = NoiseMap[0].Num();
 	const int32 MapY = NoiseMap.Num();
+	
 	TArray<FLinearColorArray> LinearColorArray;
 	
 	for(int Y=0; Y < MapY; ++Y)
@@ -166,4 +168,10 @@ void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& Noise
 	UMaterialInstanceDynamic* DynamicMaterial = MapPlane->CreateDynamicMaterialInstance(0, MapPlane->GetMaterial(0));
 	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
 	MapPlane->SetMaterial(0, DynamicMaterial);
+
+	if(bShowMesh)
+	{
+		ProceduralMeshComponent->GenerateTerrainMesh(NoiseMap, MeshHeightMultiplier);
+		ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
+	}
 }

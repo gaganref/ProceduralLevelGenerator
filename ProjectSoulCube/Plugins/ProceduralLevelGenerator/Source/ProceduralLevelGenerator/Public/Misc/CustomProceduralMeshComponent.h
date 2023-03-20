@@ -7,6 +7,7 @@
 
 #include "CustomProceduralMeshComponent.generated.h"
 
+struct FFloatArray;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class PROCEDURALLEVELGENERATOR_API UCustomProceduralMeshComponent : public UProceduralMeshComponent
@@ -14,15 +15,12 @@ class PROCEDURALLEVELGENERATOR_API UCustomProceduralMeshComponent : public UProc
 	GENERATED_BODY()
 
 public:
+
+	UCustomProceduralMeshComponent() = default;
+	
 	// Sets default values for this component's properties
 	UCustomProceduralMeshComponent(const FObjectInitializer& ObjectInitializer);
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	void GenerateTerrainMesh(const TArray<FFloatArray>& HeightMap, const float& HeightMultiplier);
 
-public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
 };

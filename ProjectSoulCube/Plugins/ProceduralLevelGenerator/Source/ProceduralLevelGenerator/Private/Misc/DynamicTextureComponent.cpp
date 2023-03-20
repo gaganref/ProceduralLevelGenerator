@@ -141,18 +141,18 @@ void UDynamicTextureComponent::SetAllPixels(const TArray<FLinearColorArray>& Col
 
 	// Get the base pointer of the pixel buffer
 	uint8* Ptr = PixelBuffer.Get();
-
+	
 	// Iterate over all pixels
 	for (int Y = 0; Y < TextureHeight; ++Y)
 	{
 		for (int X = 0; X < TextureWidth; ++X)
 		{
 			const FLinearColor Color = Colors[Y][X];
-
+	
 			// UE_LOG(LogTemp, Warning, TEXT("[Y, X]- [%s, %s] || FlinearColor- %s."), *FString::FromInt(Y), *FString::FromInt(X), *Color.ToString());
 			// Set the pixel
 			SetPixelInternal(Ptr, Color.R * 255, Color.G * 255, Color.B * 255, Color.A * 255);
-
+	
 			// Advance to the next pixel
 			Ptr += DYNAMIC_TEXTURE_BYTES_PER_PIXEL;
 		}	

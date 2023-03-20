@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "KismetProceduralMeshLibrary.h"
 #include "Structs.generated.h"
 
 USTRUCT(BlueprintType)
@@ -29,6 +30,11 @@ public:
 		return FloatArray[Index];
 	}
 
+	void Init(const float& Element, const int32& Size)
+	{
+		FloatArray.Init(Element, Size);
+	}
+	
 	void Add(const float& Value)
 	{
 		FloatArray.Add(Value);
@@ -64,6 +70,11 @@ public:
 		return LinearColorArray[Index];
 	}
 
+	void Init(const FLinearColor& Element, const int32& Size)
+	{
+		LinearColorArray.Init(Element, Size);
+	}
+	
 	void Add(const FLinearColor& Value)
 	{
 		LinearColorArray.Add(Value);
@@ -135,5 +146,94 @@ struct FTerrainTypeArray
 	int32 Num() const
 	{
 		return Terrains.Num();
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FCustomMeshData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FVector> Vertices;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FVector2D> Uvs;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<int32> Triangles;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FVector> Normals;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<struct FProcMeshTangent> Tangents;
+
+	void AddVertex(const FVector& Vertex)
+	{
+		Vertices.Add(Vertex);
+	}
+
+	void AddUv(const FVector2D& Uv)
+	{
+		Uvs.Add(Uv);
+	}
+	
+	void AddTriangle(const int32& A, const int32& B, const int32& C)
+	{
+		Triangles.Add(A);
+		Triangles.Add(B);
+		Triangles.Add(C);
+	}
+
+	void RecalculateNormals()
+	{
+		Normals = CalculateNormals();
+	}
+
+	void RecalculateTangents()
+	{
+		UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, Uvs, Normals, Tangents);
+	}
+
+private:
+	
+	TArray<FVector> CalculateNormals()
+	{
+		TArray<FVector> VertexNormals;
+		VertexNormals.Init(FVector::ZeroVector, Triangles.Num());
+		const int TriangleCount = Triangles.Num()/3;
+
+		for(int Itr=0; Itr<TriangleCount; Itr++)
+		{
+			const int NormalTriangleIndex = Itr*3;
+			int VertexIndexA = Triangles[NormalTriangleIndex];
+			int VertexIndexB = Triangles[NormalTriangleIndex + 1];
+			int VertexIndexC = Triangles[NormalTriangleIndex + 2];
+			
+			const FVector TriangleNormal = CalculateSurfaceNormalFromIndices(VertexIndexA, VertexIndexB, VertexIndexC);
+			VertexNormals[VertexIndexA] += TriangleNormal;
+			VertexNormals[VertexIndexB] += TriangleNormal;
+			VertexNormals[VertexIndexC] += TriangleNormal;
+		}
+
+		for(int Itr = 0; Itr<VertexNormals.Num(); Itr++)
+		{
+			VertexNormals[Itr] = VertexNormals[Itr].GetSafeNormal();
+		}
+
+		return VertexNormals;
+	}
+
+	FVector CalculateSurfaceNormalFromIndices(const int32& IndexA, const int32& IndexB, const int32& IndexC)
+	{
+		const FVector PointA = Vertices[IndexA];
+		const FVector PointB = Vertices[IndexB];
+		const FVector PointC = Vertices[IndexC];
+
+		const FVector SideAb = PointB - PointA;
+		const FVector SideAc = PointC - PointA;
+
+		return FVector::CrossProduct(SideAb, SideAc).GetSafeNormal();
 	}
 };

@@ -99,6 +99,9 @@ public:
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
 	FVector2D Offset;
 
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	float MeshHeightMultiplier = 5.0f;
+
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
 	TArray<FTerrainType> LevelRegions;
 
@@ -107,11 +110,14 @@ public:
 
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
 	bool bShowMapPlane = false;
+
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
+	bool bShowMesh = false;
 	
 	// Use this with caution as changing values very quickly can crash your editor
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
 	bool bGenerateNoisePlaneOnConstruction = false;
 	
 	UFUNCTION(Category = "Level Data", BlueprintCallable, CallInEditor)
-	void GenerateNoiseMap();
+	void GenerateMap();
 };
