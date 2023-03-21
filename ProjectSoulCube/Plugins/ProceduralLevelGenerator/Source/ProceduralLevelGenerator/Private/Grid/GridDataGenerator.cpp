@@ -1,57 +1,27 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Grid/Grid.h"
+#include "Grid/GridDataGenerator.h"
 
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/Noise.h"
-#include "Misc/Structs.h"
 
-void UGrid::PostInitProperties()
-{
-	Super::PostInitProperties();
-}
 
-void UGrid::PostReinitProperties()
-{
-	Super::PostReinitProperties();
-}
-
-#if WITH_EDITOR
-
-void UGrid::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-}
-
-void UGrid::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-
-}
-
-EDataValidationResult UGrid::IsDataValid(TArray<FText>& ValidationErrors)
-{
-	return Super::IsDataValid(ValidationErrors);
-}
-
-#endif
-
-void UGrid::Initialize()
+void UGridDataGenerator::GenerateData()
 {
 	ClearData();
 	InitGrid();
 }
 
-void UGrid::ClearData()
+void UGridDataGenerator::ClearData()
 {
 	NoiseColors.Empty();
 	MapColors.Empty();
 }
 
-void UGrid::InitGrid()
+void UGridDataGenerator::InitGrid()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hi gagan from Grid"));
+	UE_LOG(LogTemp, Warning, TEXT("Hi gagan, this is Grid Data Generator."));
 	const TArray<FFloatArray>& HeightMap = UNoise::GenerateNoiseMap(Seed, Rows, Columns, Scale, Octaves, Persistence, Lacunarity, Offset);
 
 	NoiseColors.Reserve(Rows);
@@ -75,13 +45,13 @@ void UGrid::InitGrid()
 			FLinearColor CurrentRegionColor = FLinearColor::Red;
 			
 			for(const auto& Region : LevelRegions)	// TODO: Can Improve Performance.
-			{
+				{
 				if(CurrentHeight <= Region.MaxHeight)
 				{
 					CurrentRegionColor = Region.LinearColor;
 					break;
 				}
-			}
+				}
 			MapColorArray.Add(CurrentRegionColor);
 		}
 

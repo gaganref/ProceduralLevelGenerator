@@ -40,6 +40,11 @@ public:
 		FloatArray.Add(Value);
 	}
 
+	void Reserve(const int32& Size)
+	{
+		FloatArray.Reserve(Size);
+	}
+
 	int32 Num() const
 	{
 		return FloatArray.Num();
@@ -73,6 +78,11 @@ public:
 	void Init(const FLinearColor& Element, const int32& Size)
 	{
 		LinearColorArray.Init(Element, Size);
+	}
+
+	void Reserve(const int32& Size)
+	{
+		LinearColorArray.Reserve(Size);
 	}
 	
 	void Add(const FLinearColor& Value)

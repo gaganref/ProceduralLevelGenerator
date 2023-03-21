@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "LevelGenerator.generated.h"
 
+class UGrid;
 struct FTerrainType;
 class UDynamicTextureComponent;
 struct FFloatArray;
@@ -72,6 +73,10 @@ public:
 
 
 public:
+	
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UGrid> GridData;
+	
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
 	int32 Seed = 231;
 	

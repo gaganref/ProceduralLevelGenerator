@@ -3,6 +3,7 @@
 
 #include "Generator/LevelGenerator.h"
 
+#include "Grid/Grid.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/CustomProceduralMeshComponent.h"
 #include "Misc/DynamicTextureComponent.h"
@@ -76,6 +77,10 @@ void ALevelGenerator::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
+	if(GridData)
+	{
+		GridData->Initialize();
+	}
 	if(bGenerateNoisePlaneOnConstruction)
 	{
 		InitLevelGenerator();
@@ -103,24 +108,28 @@ void ALevelGenerator::InitLevelGenerator()
 }
 
 void ALevelGenerator::GenerateTextureOnNoisePlane(const TArray<FFloatArray>& NoiseMap)
-{	
-	const int32 MapX = NoiseMap[0].Num();
-	const int32 MapY = NoiseMap.Num();
-	
-	TArray<FLinearColorArray> LinearColorArray;
-	
-	for(int Y=0; Y < MapY; ++Y)
-	{
-		FLinearColorArray LinearColors;
-		for(int X=0; X < MapX; ++X)
-		{
-			FLinearColor NoiseLinearColor = UKismetMathLibrary::LinearColorLerp(FLinearColor::Black, FLinearColor::White, NoiseMap[Y][X]);
-			LinearColors.Add(NoiseLinearColor);
-		}
-		LinearColorArray.Add(LinearColors);
-	}
+{
+	// const int32 MapX = NoiseMap.Num();
+	// const int32 MapY = NoiseMap[0].Num();
+	//
+	// TArray<FLinearColorArray> LinearColorArray;
+	//
+	// for(int X=0; X < MapX; ++X)
+	// {
+	// 	FLinearColorArray LinearColors;
+	// 	for(int Y=0; Y < MapY; ++Y)
+	// 	{
+	// 		FLinearColor NoiseLinearColor = UKismetMathLibrary::LinearColorLerp(FLinearColor::Black, FLinearColor::White, NoiseMap[X][Y]);
+	// 		LinearColors.Add(NoiseLinearColor);
+	// 	}
+	// 	LinearColorArray.Add(LinearColors);
+	// }
 
-	NoiseTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
+	if(!GridData)
+	{
+		return;
+	}
+	NoiseTextureComponent->ReInitialize(GridData->GetRows(), GridData->GetColumns(), FLinearColor::White, GridData->GetNoiseColors());
 	NoiseTextureComponent->UpdateTexture();
 	const TObjectPtr<UTexture2D> NoiseTexture = NoiseTextureComponent->GetTextureResource();
 	
@@ -132,35 +141,41 @@ void ALevelGenerator::GenerateTextureOnNoisePlane(const TArray<FFloatArray>& Noi
 
 void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& NoiseMap)
 {
-	const int32 MapX = NoiseMap[0].Num();
-	const int32 MapY = NoiseMap.Num();
+	// const int32 MapX = NoiseMap.Num();
+	// const int32 MapY = NoiseMap[0].Num();
+	//
+	// TArray<FLinearColorArray> LinearColorArray;
+	//
+	//
+	// for(int X=0; X < MapX; ++X)
+	// {
+	// 	FLinearColorArray LinearColors;
+	// 	for(int Y=0; Y < MapY; ++Y)
+	// 	{
+	// 		const float CurrentHeight = NoiseMap[X][Y];
+	// 		FLinearColor RegionColor = FLinearColor::Red;
+	// 		FString Temp = FString("TempColor");
+	// 		
+	// 		for(const auto& Region : LevelRegions)
+	// 		{
+	// 			if(CurrentHeight <= Region.MaxHeight)
+	// 			{
+	// 				Temp = Region.TerrainName;
+	// 				RegionColor = Region.LinearColor;
+	// 				break;
+	// 			}
+	// 		}
+	// 		LinearColors.Add(RegionColor);
+	// 	}
+	// 	LinearColorArray.Add(LinearColors);
+	// }
 	
-	TArray<FLinearColorArray> LinearColorArray;
-	
-	for(int Y=0; Y < MapY; ++Y)
+	// MapTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
+	if(!GridData)
 	{
-		FLinearColorArray LinearColors;
-		for(int X=0; X < MapX; ++X)
-		{
-			const float CurrentHeight = NoiseMap[Y][X];
-			FLinearColor RegionColor = FLinearColor::Red;
-			FString Temp = FString("TempColor");
-			
-			for(const auto& Region : LevelRegions)
-			{
-				if(CurrentHeight <= Region.MaxHeight)
-				{
-					Temp = Region.TerrainName;
-					RegionColor = Region.LinearColor;
-					break;
-				}
-			}
-			LinearColors.Add(RegionColor);
-		}
-		LinearColorArray.Add(LinearColors);
+		return;
 	}
-
-	MapTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
+	MapTextureComponent->ReInitialize(GridData->GetRows(), GridData->GetColumns(), FLinearColor::White, GridData->GetMapColors());
 	MapTextureComponent->UpdateTexture();
 	const TObjectPtr<UTexture2D> NoiseTexture = MapTextureComponent->GetTextureResource();
 	
@@ -169,9 +184,9 @@ void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& Noise
 	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
 	MapPlane->SetMaterial(0, DynamicMaterial);
 
-	if(bShowMesh)
-	{
-		ProceduralMeshComponent->GenerateTerrainMesh(NoiseMap, MeshHeightMultiplier);
-		ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
-	}
+	// if(bShowMesh)
+	// {
+	// 	ProceduralMeshComponent->GenerateTerrainMesh(NoiseMap, MeshHeightMultiplier);
+	// 	ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
+	// }
 }

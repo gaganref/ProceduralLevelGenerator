@@ -20,23 +20,23 @@ UCustomProceduralMeshComponent::UCustomProceduralMeshComponent(const FObjectInit
 
 void UCustomProceduralMeshComponent::GenerateTerrainMesh(const TArray<FFloatArray>& HeightMap, const float& HeightMultiplier)
 {
-	const int32 MapX = HeightMap[0].Num();
-	const int32 MapY = HeightMap.Num();
+	// const int32 MapX = HeightMap[0].Num();
+	// const int32 MapY = HeightMap.Num();
+	const int32 MapX = HeightMap.Num();
+	const int32 MapY = HeightMap[0].Num();
 
 	const float TopLeftX = (MapX - 1) / -2.0f;
-	const float TopLeftZ = (MapY - 1) / -2.0f;
+	const float TopLeftY = (MapY - 1) / -2.0f;
 
 	FCustomMeshData MeshData;
 	int32 VertexIndex = 0;
 	
-	for(int Y=0; Y < MapY; ++Y)
+	for(int X=0; X < MapX; ++X)
 	{
-		for(int X=0; X < MapX; ++X)
+		for(int Y=0; Y < MapY; ++Y)
 		{
-			// MeshData.AddVertex(FVector(TopLeftX + X, HeightMap[Y][X], TopLeftZ + Y));
-			// MeshData.AddVertex(FVector(TopLeftX + X, TopLeftZ + Y, HeightMap[Y][X]));
-			MeshData.AddVertex(FVector(TopLeftZ + Y, TopLeftX + X, HeightMap[Y][X] * HeightMultiplier));
-			MeshData.AddUv(FVector2D(X/(float)MapX, Y/float(MapY)));
+			MeshData.AddVertex(FVector(TopLeftX + X, TopLeftY + Y, HeightMap[X][Y] * HeightMultiplier));
+			MeshData.AddUv(FVector2D(X/static_cast<float>(MapX), Y/static_cast<float>(MapY)));
 
 			if((X < MapX-1) && (Y < MapY-1))
 			{

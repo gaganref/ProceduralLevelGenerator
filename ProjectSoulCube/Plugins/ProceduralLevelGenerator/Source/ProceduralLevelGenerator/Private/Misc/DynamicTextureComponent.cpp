@@ -147,8 +147,9 @@ void UDynamicTextureComponent::SetAllPixels(const TArray<FLinearColorArray>& Col
 	{
 		for (int X = 0; X < TextureWidth; ++X)
 		{
-			const FLinearColor Color = Colors[Y][X];
-	
+			// const FLinearColor Color = Colors[Y][X];
+			const FLinearColor Color = Colors[X][Y];
+			
 			// UE_LOG(LogTemp, Warning, TEXT("[Y, X]- [%s, %s] || FlinearColor- %s."), *FString::FromInt(Y), *FString::FromInt(X), *Color.ToString());
 			// Set the pixel
 			SetPixelInternal(Ptr, Color.R * 255, Color.G * 255, Color.B * 255, Color.A * 255);
@@ -243,13 +244,12 @@ int32 UDynamicTextureComponent::GetHeight() const
 
 bool UDynamicTextureComponent::IsValidColorArray(const TArray<FLinearColorArray>& Colors) const
 {
-	const int32 ArrayHeight = Colors.Num();
-	if(ArrayHeight <= 0)
+	const int32 ArrayWidth = Colors.Num();
+	if(ArrayWidth <= 0)
 	{
 		return false;
 	}
-	const int32 ArrayWidth = Colors[0].Num();
-	
+	const int32 ArrayHeight = Colors[0].Num();
 	return((ArrayWidth == TextureWidth) && (ArrayHeight == TextureHeight));
 }
 
