@@ -3,6 +3,7 @@
 
 #include "GridDataGeneratorActions.h"
 
+#include "GridDataGeneratorToolkit.h"
 #include "Grid/GridDataGenerator.h"
 
 UClass* FGridDataGeneratorAssetTypeActions::GetSupportedClass() const
@@ -23,4 +24,10 @@ FColor FGridDataGeneratorAssetTypeActions::GetTypeColor() const
 uint32 FGridDataGeneratorAssetTypeActions::GetCategories()
 {
 	return EAssetTypeCategories::Misc;
+}
+
+void FGridDataGeneratorAssetTypeActions::OpenAssetEditor(const TArray<UObject*>& InObjects,
+	TSharedPtr<IToolkitHost> EditWithinLevelEditor)
+{
+	MakeShared<FGridDataGeneratorToolkit>()->InitEditor(InObjects);
 }

@@ -59,11 +59,37 @@ protected:
 	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
 	FRuntimeFloatCurve HeightMultiplierCurve;
 	
+	UPROPERTY(Category = "Grid Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 NoiseColorsSize;
+
+	UPROPERTY(Category = "Grid Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MapColorsSize;
+
+	UPROPERTY(Category = "Grid Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshVertexSize;
+
+	UPROPERTY(Category = "Grid Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshUvsSize;
+	
+	UPROPERTY(Category = "Grid Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshTriangleSize;
+
+	UPROPERTY(Category = "Grid Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshTangentsSize;
+
+	UPROPERTY(Category = "Grid Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshNormalsSize;
+	
 	UPROPERTY()
 	TArray<FLinearColorArray> NoiseColors;
 
 	UPROPERTY()
 	TArray<FLinearColorArray> MapColors;
+
+	UPROPERTY()
+	TArray<FVector> Vertices;
+
+	FCustomMeshData MeshData;
 	
 	// UPROPERTY()
 	// TArray<FGridCell> GridCells;
@@ -110,6 +136,8 @@ public:
 	FORCEINLINE TArray<FLinearColorArray> GetNoiseColors() const {return NoiseColors;}
 
 	FORCEINLINE TArray<FLinearColorArray> GetMapColors() const {return MapColors;}
+
+	FORCEINLINE const FCustomMeshData& GetMeshData() const {return MeshData;}
 
 	// FORCEINLINE TArray<FGridCell> GetGridCells() const {return GridCells;}
 

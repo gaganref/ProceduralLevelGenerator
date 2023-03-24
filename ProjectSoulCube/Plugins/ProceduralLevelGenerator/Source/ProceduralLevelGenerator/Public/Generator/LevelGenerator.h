@@ -34,15 +34,14 @@ private:
 	UPROPERTY(Category = "Debug", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	bool bDebug = false;
 
-	/** Plane where the perlin noise is projected using texture. */
+	/** Noise Plane where the perlin noise is projected using texture. */
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDynamicTextureComponent> NoiseTextureComponent;
 
-	/** Plane where the perlin noise is projected using texture. */
+	/** Map Plane where the perlin noise is projected using texture. */
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UDynamicTextureComponent> MapTextureComponent;
 
-	/** Plane where the perlin noise is projected using texture. */
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCustomProceduralMeshComponent> ProceduralMeshComponent;
 	
@@ -63,8 +62,8 @@ protected:
 protected:
 	void InitLevelGenerator();
 
-	void GenerateTextureOnNoisePlane(const TArray<FFloatArray>& NoiseMap);
-	void GenerateTextureOnMapPlane(const TArray<FFloatArray>& NoiseMap);
+	void GenerateTextureOnNoisePlane();
+	void GenerateTextureOnMapPlane();
 	
 public:
 

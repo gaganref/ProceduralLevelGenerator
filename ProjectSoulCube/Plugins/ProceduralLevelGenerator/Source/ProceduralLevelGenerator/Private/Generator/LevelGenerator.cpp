@@ -10,25 +10,6 @@
 #include "Misc/Noise.h"
 #include "Misc/Structs.h"
 
-#define DEBUG_GET_CURR_CLASS_FUNC (FString(__FUNCTION__))
-#define DEBUG_GET_CURR_LINE (FString::FromInt(__LINE__))
-
-#define DEBUG_LOG_SIMPLE UE_LOG(LogTemp, Error, TEXT("Debug- Simple log."))
-#define DEBUG_MESSAGE_SIMPLE if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::Printf(TEXT("Debug- Simple message.")))
-#define DEBUG_PRINT_SIMPLE DEBUG_LOG_SIMPLE DEBUG_MESSAGE_SIMPLE
-
-#define DEBUG_LOG_SIMPLE_WITH_INFO UE_LOG(LogTemp, Error, TEXT("Debug- Simple log with info. || Called at- %s::%s."), *DEBUG_GET_CURR_CLASS_FUNC, *DEBUG_GET_CURR_LINE)
-#define DEBUG_MESSAGE_SIMPLE_WITH_INFO if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::Printf(TEXT("Debug- Simple message with info. || Called at- %s::%s."), *DEBUG_GET_CURR_CLASS_FUNC, *DEBUG_GET_CURR_LINE))
-#define DEBUG_PRINT_SIMPLE_WITH_INFO DEBUG_LOG_SIMPLE_WITH_INFO DEBUG_MESSAGE_SIMPLE_WITH_INFO
-
-#define DEBUG_LOG_CUSTOM_TEXT(text) UE_LOG(LogTemp, Error, TEXT("Debug- %s"), *FString(text))
-#define DEBUG_MESSAGE_CUSTOM_TEXT(text) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::Printf(TEXT("Debug - %s"), *FString(text)))
-#define DEBUG_PRINT_CUSTOM_TEXT(text) DEBUG_LOG_CUSTOM_TEXT(text) DEBUG_MESSAGE_CUSTOM_TEXT(text)
-
-#define DEBUG_LOG_CUSTOM_TEXT_WITH_INFO(text) UE_LOG(LogTemp, Error, TEXT("Debug- %s || Called at- %s::%s."), *FString(text), *DEBUG_GET_CURR_CLASS_FUNC, *DEBUG_GET_CURR_LINE)
-#define DEBUG_MESSAGE_CUSTOM_TEXT_WITH_INFO(text) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::Printf(TEXT("Debug - %s || Called at- %s::%s."), *FString(text), *DEBUG_GET_CURR_CLASS_FUNC, *DEBUG_GET_CURR_LINE))
-#define DEBUG_PRINT_CUSTOM_TEXT_WITH_INFO(text) DEBUG_LOG_CUSTOM_TEXT_WITH_INFO(text) DEBUG_MESSAGE_CUSTOM_TEXT_WITH_INFO(text)
-
 static TArray<FLinearColorArray> PixelColorArrayEmpty;
 
 // Sets default values
@@ -57,6 +38,7 @@ ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
 	MapTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
 
 	ProceduralMeshComponent = CreateDefaultSubobject<UCustomProceduralMeshComponent>(TEXT("Procedural Mesh Component"));
+	ProceduralMeshComponent->SetCollisionProfileName("BlockAll");
 }
 
 // Called when the game starts or when spawned
@@ -77,10 +59,6 @@ void ALevelGenerator::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	if(GridData)
-	{
-		GridData->Initialize();
-	}
 	if(bGenerateNoisePlaneOnConstruction)
 	{
 		InitLevelGenerator();
@@ -94,41 +72,23 @@ void ALevelGenerator::GenerateMap()
 
 void ALevelGenerator::InitLevelGenerator()
 {
-	const TArray<FFloatArray>& NoiseMap = UNoise::GenerateNoiseMap(Seed, Rows, Columns, Scale, Octaves, Persistence, Lacunarity, Offset);
-
 	if(bShowNoisePlane)
 	{
-		GenerateTextureOnNoisePlane(NoiseMap);
+		GenerateTextureOnNoisePlane();
 	}
 	if(bShowMapPlane)
 	{
-		GenerateTextureOnMapPlane(NoiseMap);
+		GenerateTextureOnMapPlane();
 	}
-	
 }
 
-void ALevelGenerator::GenerateTextureOnNoisePlane(const TArray<FFloatArray>& NoiseMap)
+void ALevelGenerator::GenerateTextureOnNoisePlane()
 {
-	// const int32 MapX = NoiseMap.Num();
-	// const int32 MapY = NoiseMap[0].Num();
-	//
-	// TArray<FLinearColorArray> LinearColorArray;
-	//
-	// for(int X=0; X < MapX; ++X)
-	// {
-	// 	FLinearColorArray LinearColors;
-	// 	for(int Y=0; Y < MapY; ++Y)
-	// 	{
-	// 		FLinearColor NoiseLinearColor = UKismetMathLibrary::LinearColorLerp(FLinearColor::Black, FLinearColor::White, NoiseMap[X][Y]);
-	// 		LinearColors.Add(NoiseLinearColor);
-	// 	}
-	// 	LinearColorArray.Add(LinearColors);
-	// }
-
 	if(!GridData)
 	{
 		return;
 	}
+	
 	NoiseTextureComponent->ReInitialize(GridData->GetRows(), GridData->GetColumns(), FLinearColor::White, GridData->GetNoiseColors());
 	NoiseTextureComponent->UpdateTexture();
 	const TObjectPtr<UTexture2D> NoiseTexture = NoiseTextureComponent->GetTextureResource();
@@ -139,42 +99,13 @@ void ALevelGenerator::GenerateTextureOnNoisePlane(const TArray<FFloatArray>& Noi
 	NoisePlane->SetMaterial(0, DynamicMaterial);
 }
 
-void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& NoiseMap)
+void ALevelGenerator::GenerateTextureOnMapPlane()
 {
-	// const int32 MapX = NoiseMap.Num();
-	// const int32 MapY = NoiseMap[0].Num();
-	//
-	// TArray<FLinearColorArray> LinearColorArray;
-	//
-	//
-	// for(int X=0; X < MapX; ++X)
-	// {
-	// 	FLinearColorArray LinearColors;
-	// 	for(int Y=0; Y < MapY; ++Y)
-	// 	{
-	// 		const float CurrentHeight = NoiseMap[X][Y];
-	// 		FLinearColor RegionColor = FLinearColor::Red;
-	// 		FString Temp = FString("TempColor");
-	// 		
-	// 		for(const auto& Region : LevelRegions)
-	// 		{
-	// 			if(CurrentHeight <= Region.MaxHeight)
-	// 			{
-	// 				Temp = Region.TerrainName;
-	// 				RegionColor = Region.LinearColor;
-	// 				break;
-	// 			}
-	// 		}
-	// 		LinearColors.Add(RegionColor);
-	// 	}
-	// 	LinearColorArray.Add(LinearColors);
-	// }
-	
-	// MapTextureComponent->ReInitialize(Rows, Columns, FLinearColor::White, LinearColorArray);
 	if(!GridData)
 	{
 		return;
 	}
+	
 	MapTextureComponent->ReInitialize(GridData->GetRows(), GridData->GetColumns(), FLinearColor::White, GridData->GetMapColors());
 	MapTextureComponent->UpdateTexture();
 	const TObjectPtr<UTexture2D> NoiseTexture = MapTextureComponent->GetTextureResource();
@@ -184,9 +115,11 @@ void ALevelGenerator::GenerateTextureOnMapPlane(const TArray<FFloatArray>& Noise
 	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
 	MapPlane->SetMaterial(0, DynamicMaterial);
 
-	// if(bShowMesh)
-	// {
-	// 	ProceduralMeshComponent->GenerateTerrainMesh(NoiseMap, MeshHeightMultiplier);
-	// 	ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
-	// }
+	if(bShowMesh)
+	{
+		const FCustomMeshData& MeshData = GridData->GetMeshData();
+		
+		ProceduralMeshComponent->CreateMeshSection_LinearColor(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.Uvs, MeshData.VertexColors, MeshData.Tangents, true);
+		ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
+	}
 }

@@ -20,7 +20,4 @@ public:
 	
 	// Sets default values for this component's properties
 	UCustomProceduralMeshComponent(const FObjectInitializer& ObjectInitializer);
-
-	void GenerateTerrainMesh(const TArray<FFloatArray>& HeightMap, const float& HeightMultiplier);
-
 };

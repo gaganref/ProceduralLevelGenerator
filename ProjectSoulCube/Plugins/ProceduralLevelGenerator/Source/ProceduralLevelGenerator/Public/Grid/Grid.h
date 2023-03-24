@@ -4,65 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Misc/Structs.h"
 #include "Grid.generated.h"
 
 struct FLinearColorArray;
 struct FTerrainType;
+struct FCustomMeshData;
+struct FCellVertices;
+struct FGridCell;
 class UCurveFloat;
-
-/**
- * Struct that holds each cell data of the grid
- */
-USTRUCT(BlueprintType)
-struct PROCEDURALLEVELGENERATOR_API FCellVertices
-{
-	GENERATED_BODY()
-
-	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
-	FVector TopLeft;
-
-	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
-	FVector TopRight;
-	
-	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
-	FVector BottomLeft;
-
-	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
-	FVector BottomRight;
-
-	FCellVertices() = default;
-
-	FCellVertices(const FVector& InTopLeft, const FVector& InTopRight, const FVector& InBottomLeft, const FVector& InBottomRight)
-		: TopLeft(InTopLeft), TopRight(InTopRight), BottomLeft(InBottomLeft), BottomRight(InBottomRight) {}
-};
-
-
-/**
- * Struct that holds each cell data of the grid
- */
-USTRUCT(BlueprintType)
-struct PROCEDURALLEVELGENERATOR_API FGridCell
-{
-	GENERATED_BODY()
-
-	// Location is the center of the cell
-	UPROPERTY(Category = "Cell Data", BlueprintReadOnly)
-	FVector Location;
-
-	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
-	FCellVertices CellVertices;
-
-	FGridCell() = default;
-
-	explicit FGridCell(const FVector& InLocation) : Location(InLocation) {}
-
-	// Constructor with cell vertices
-	FGridCell(const FVector& InLocation, const FVector& InTopLeft, const FVector& InTopRight, const FVector& InBottomLeft, const FVector& InBottomRight)
-		: Location(InLocation),	CellVertices(InTopLeft, InTopRight, InBottomLeft, InBottomRight){}
-	
-};
-
-
 
 /**
  * 
@@ -71,6 +21,11 @@ UCLASS(BlueprintType)
 class PROCEDURALLEVELGENERATOR_API UGrid : public UDataAsset
 {
 	GENERATED_BODY()
+
+private:
+
+	// UPROPERTY()
+	// bool bIsGeneratingGrid = false;
 
 protected:
 
@@ -86,30 +41,57 @@ protected:
 	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	int32 Columns = 100;
 
-	// Size of each individual cell (as a cell is a square SizeOnX = SizeOnY)
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.00001f))
+	// Size of each individual cell (as a cell is a square SizeOnX = SizeOnY).
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	int32 GridCellSize = 10;
+	
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.00001f))
 	float Scale = 23.0f;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
 	int32 Octaves = 5;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1))
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1))
 	float Persistence = 0.5f;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	float Lacunarity = 2.0f;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
 	FVector2D Offset;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
 	TArray<FTerrainType> LevelRegions;
 	
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	float MeshHeightMultiplier = 36.0f;
 
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
 	FRuntimeFloatCurve HeightMultiplierCurve;
+
+	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 NoiseColorsSize;
+
+	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MapColorsSize;
+
+	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshVertexSize;
+
+	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshUvsSize;
+	
+	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshTriangleSize;
+
+	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshTangentsSize;
+
+	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
+	int32 MeshNormalsSize;
+
+
+protected:
 	
 	UPROPERTY()
 	TArray<FLinearColorArray> NoiseColors;
@@ -120,6 +102,9 @@ protected:
 	UPROPERTY()
 	TArray<FGridCell> GridCells;
 
+	UPROPERTY()
+	FCustomMeshData MeshData;
+	
 protected:
 	
 	/**
@@ -164,6 +149,13 @@ protected:
 	virtual void ClearData();
 
 public:
+	
+	void Initialize();
+
+	UFUNCTION(CallInEditor)
+	void GenerateData();
+	
+public:
 
 	// Getters
 	
@@ -187,17 +179,17 @@ public:
 
 	FORCEINLINE FVector2D GetOffset() const {return Offset;}
 
-	FORCEINLINE TArray<FTerrainType> GetLevelRegions() const {return LevelRegions;}
+	FORCEINLINE const TArray<FTerrainType>& GetLevelRegions() const {return LevelRegions;}
 
 	FORCEINLINE float GetMeshHeightMultiplier() const {return MeshHeightMultiplier;}
 
 	// FORCEINLINE TObjectPtr<UCurveFloat> GetHeightMultiplierCurve() const {return HeightMultiplierCurve;}
+	
+	FORCEINLINE const TArray<FLinearColorArray>& GetNoiseColors() const {return NoiseColors;}
 
-	FORCEINLINE TArray<FLinearColorArray> GetNoiseColors() const {return NoiseColors;}
+	FORCEINLINE const TArray<FLinearColorArray>& GetMapColors() const {return MapColors;}
 
-	FORCEINLINE TArray<FLinearColorArray> GetMapColors() const {return MapColors;}
+	FORCEINLINE const TArray<FGridCell>& GetGridCells() const {return GridCells;}
 
-	FORCEINLINE TArray<FGridCell> GetGridCells() const {return GridCells;}
-
-	void Initialize();
+	FORCEINLINE const FCustomMeshData& GetMeshData() const {return MeshData;}
 };

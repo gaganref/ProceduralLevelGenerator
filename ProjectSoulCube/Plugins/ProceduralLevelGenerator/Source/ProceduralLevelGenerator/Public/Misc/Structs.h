@@ -6,6 +6,20 @@
 #include "KismetProceduralMeshLibrary.h"
 #include "Structs.generated.h"
 
+
+UENUM()
+enum EMeshSection
+{
+	MS_WaterDeep			UMETA(DisplayName = "Water Deep"),
+	MS_WaterShallow			UMETA(DisplayName = "Water Shallow"),
+	MS_Sand					UMETA(DisplayName = "Sand"),
+	MS_GrassLight			UMETA(DisplayName = "Grass Light"),
+	MS_GrassDark			UMETA(DisplayName = "Grass Dark"),
+	MS_DirtLight			UMETA(DisplayName = "Dirt Light"),
+	MS_DirtDark				UMETA(DisplayName = "Dirt Dark"),
+	MS_Snow					UMETA(DisplayName = "Snow"),
+};
+
 USTRUCT(BlueprintType)
 struct FFloatArray
 {
@@ -40,9 +54,24 @@ public:
 		FloatArray.Add(Value);
 	}
 
+	void AddUninitialized(const int32& Size)
+	{
+		FloatArray.AddUninitialized(Size);
+	}
+
 	void Reserve(const int32& Size)
 	{
 		FloatArray.Reserve(Size);
+	}
+
+	void Empty()
+	{
+		FloatArray.Empty();
+	}
+	
+	void Reset(const int32& Size)	// Same as empty, but doesn't change memory allocations
+	{
+		FloatArray.Reset(Size);
 	}
 
 	int32 Num() const
@@ -112,6 +141,9 @@ struct FTerrainType
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FLinearColor LinearColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TObjectPtr<UMaterialInstance> RegionMaterial;
 	
 	FTerrainType() = default;
 };
@@ -166,6 +198,9 @@ struct FCustomMeshData
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FVector> Vertices;
+	
+	UPROPERTY()
+	TArray<FLinearColor> VertexColors;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<FVector2D> Uvs;
@@ -179,9 +214,24 @@ struct FCustomMeshData
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<struct FProcMeshTangent> Tangents;
 
+	FCustomMeshData() = default;
+
+	FCustomMeshData(const int32& InWidth, const int32& InHeight)
+	{
+		Vertices.Reserve(InWidth*InHeight);
+		VertexColors.Reserve(InWidth*InHeight);
+		Uvs.Reserve(InWidth * InHeight);
+		Triangles.Reserve((InWidth - 1) * (InHeight - 1) * 6);
+	}
+	
 	void AddVertex(const FVector& Vertex)
 	{
 		Vertices.Add(Vertex);
+	}
+
+	void AddVertexColor(const FLinearColor& Color)
+	{
+		VertexColors.Add(Color);
 	}
 
 	void AddUv(const FVector2D& Uv)
@@ -196,54 +246,63 @@ struct FCustomMeshData
 		Triangles.Add(C);
 	}
 
-	void RecalculateNormals()
-	{
-		Normals = CalculateNormals();
-	}
-
-	void RecalculateTangents()
+	void RecalculateNormalsAndTangents()
 	{
 		UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, Uvs, Normals, Tangents);
 	}
-
-private:
-	
-	TArray<FVector> CalculateNormals()
-	{
-		TArray<FVector> VertexNormals;
-		VertexNormals.Init(FVector::ZeroVector, Triangles.Num());
-		const int TriangleCount = Triangles.Num()/3;
-
-		for(int Itr=0; Itr<TriangleCount; Itr++)
-		{
-			const int NormalTriangleIndex = Itr*3;
-			int VertexIndexA = Triangles[NormalTriangleIndex];
-			int VertexIndexB = Triangles[NormalTriangleIndex + 1];
-			int VertexIndexC = Triangles[NormalTriangleIndex + 2];
-			
-			const FVector TriangleNormal = CalculateSurfaceNormalFromIndices(VertexIndexA, VertexIndexB, VertexIndexC);
-			VertexNormals[VertexIndexA] += TriangleNormal;
-			VertexNormals[VertexIndexB] += TriangleNormal;
-			VertexNormals[VertexIndexC] += TriangleNormal;
-		}
-
-		for(int Itr = 0; Itr<VertexNormals.Num(); Itr++)
-		{
-			VertexNormals[Itr] = VertexNormals[Itr].GetSafeNormal();
-		}
-
-		return VertexNormals;
-	}
-
-	FVector CalculateSurfaceNormalFromIndices(const int32& IndexA, const int32& IndexB, const int32& IndexC)
-	{
-		const FVector PointA = Vertices[IndexA];
-		const FVector PointB = Vertices[IndexB];
-		const FVector PointC = Vertices[IndexC];
-
-		const FVector SideAb = PointB - PointA;
-		const FVector SideAc = PointC - PointA;
-
-		return FVector::CrossProduct(SideAb, SideAc).GetSafeNormal();
-	}
 };
+
+
+/**
+ * Struct that holds each cell data of the grid
+ */
+USTRUCT(BlueprintType)
+struct PROCEDURALLEVELGENERATOR_API FCellVertices
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
+	FVector TopLeft;
+
+	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
+	FVector TopRight;
+	
+	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
+	FVector BottomLeft;
+
+	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
+	FVector BottomRight;
+
+	FCellVertices() = default;
+
+	FCellVertices(const FVector& InTopLeft, const FVector& InTopRight, const FVector& InBottomLeft, const FVector& InBottomRight)
+		: TopLeft(InTopLeft), TopRight(InTopRight), BottomLeft(InBottomLeft), BottomRight(InBottomRight) {}
+};
+
+
+/**
+ * Struct that holds each cell data of the grid
+ */
+USTRUCT(BlueprintType)
+struct PROCEDURALLEVELGENERATOR_API FGridCell
+{
+	GENERATED_BODY()
+
+	// Location is the center of the cell
+	UPROPERTY(Category = "Cell Data", BlueprintReadOnly)
+	FVector Location;
+
+	UPROPERTY(Category = "Cell Vertices Data", BlueprintReadOnly)
+	FCellVertices CellVertices;
+
+	FGridCell() = default;
+
+	explicit FGridCell(const FVector& InLocation) : Location(InLocation) {}
+
+	// Constructor with cell vertices
+	FGridCell(const FVector& InLocation, const FVector& InTopLeft, const FVector& InTopRight, const FVector& InBottomLeft, const FVector& InBottomRight)
+		: Location(InLocation),	CellVertices(InTopLeft, InTopRight, InBottomLeft, InBottomRight){}
+	
+};
+
+
