@@ -15,14 +15,14 @@ TArray<FVector2D> UNoise::CalculateOcataveOffsets(const int& Seed, const int32& 
 {
 	TArray<FVector2D> OctaveOffsets;
 	OctaveOffsets.Reserve(Octaves);
+	OctaveOffsets.AddUninitialized(Octaves);
+	
 	const FRandomStream RandomStream = FRandomStream(Seed);
 	
 	for(int Itr=0; Itr < Octaves; ++Itr)
 	{
-		FVector2D CurrentOffset;
-		CurrentOffset.X = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream) + Offset.X;
-		CurrentOffset.Y = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream) + Offset.Y;
-		OctaveOffsets.Add(CurrentOffset);
+		OctaveOffsets[Itr].X = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream) + Offset.X;
+		OctaveOffsets[Itr].Y = UKismetMathLibrary::RandomFloatInRangeFromStream(-100000, 100000, RandomStream) + Offset.Y;
 	}
 
 	return OctaveOffsets;
@@ -60,20 +60,21 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 	
 	const TArray<FVector2D>& OctaveOffsets = CalculateOcataveOffsets(Seed, Octaves, Offset);
 	
+	
+	FFloatArray FillArray;
+	FillArray.Reserve(MapHeight);
+	FillArray.AddUninitialized(MapHeight);
+
 	TArray<FFloatArray> NoiseMap;
 	NoiseMap.Reserve(MapWidth);
+	NoiseMap.Init(FillArray, MapWidth);
 	
 	for(int X=0; X < MapWidth; ++X)	
 	{
-		FFloatArray CurrArray;
-		CurrArray.Reserve(MapHeight);
-		
 		for(int Y=0; Y < MapHeight; ++Y)
 		{
-			const float NoiseHeight = CalculatePerlinValueAtPoint(MapHalfWidth, MapHalfHeight, X, Y, Scale, Octaves, Persistence, Lacunarity, OctaveOffsets);
-			CurrArray.Add(NoiseHeight);
+			NoiseMap[X][Y] = CalculatePerlinValueAtPoint(MapHalfWidth, MapHalfHeight, X, Y, Scale, Octaves, Persistence, Lacunarity, OctaveOffsets);
 		}
-		NoiseMap.Add(CurrArray);
 	}
 
 	return NoiseMap;

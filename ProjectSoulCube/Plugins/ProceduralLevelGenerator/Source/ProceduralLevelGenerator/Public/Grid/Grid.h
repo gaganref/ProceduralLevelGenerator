@@ -34,11 +34,11 @@ protected:
 	int32 Seed = 252;
 	
 	// Total no of rows(→) or total no of cells(■) in each row(→) in the grid.
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 235))
 	int32 Rows = 100;
 
 	// Total no of columns(↑) or total no of cells(■) in each column(↑) in the grid.
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 235))
 	int32 Columns = 100;
 
 	// Size of each individual cell (as a cell is a square SizeOnX = SizeOnY).
@@ -69,6 +69,9 @@ protected:
 	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
 	FRuntimeFloatCurve HeightMultiplierCurve;
 
+	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly)
+	bool bUseFlatShading;
+	
 	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
 	int32 NoiseColorsSize;
 
@@ -104,6 +107,29 @@ protected:
 
 	UPROPERTY()
 	FCustomMeshData MeshData;
+
+public:
+	// Testing
+
+	//NOTE: verts cap = 1,000,000. i.e no of verts = total tris * no of verts for each tri
+	
+	UPROPERTY()
+	TArray<FVector> Vertices;
+	
+	UPROPERTY()
+	TArray<FLinearColor> VertexColors;
+
+	UPROPERTY()
+	TArray<FVector2D> Uvs;
+
+	UPROPERTY()
+	TArray<int32> Triangles;
+
+	UPROPERTY()
+	TArray<FVector> Normals;
+
+	UPROPERTY()
+	TArray<struct FProcMeshTangent> Tangents;
 	
 protected:
 	
@@ -145,6 +171,8 @@ protected:
 	 * Called to initialize grid.
 	 */
 	virtual void InitGrid();
+
+	virtual void InitGrid_Test();
 
 	virtual void ClearData();
 

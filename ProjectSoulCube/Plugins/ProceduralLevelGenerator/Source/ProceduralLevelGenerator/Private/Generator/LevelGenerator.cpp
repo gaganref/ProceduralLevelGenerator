@@ -118,8 +118,10 @@ void ALevelGenerator::GenerateTextureOnMapPlane()
 	if(bShowMesh)
 	{
 		const FCustomMeshData& MeshData = GridData->GetMeshData();
+		// ProceduralMeshComponent->CreateMeshSection_LinearColor(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.Uvs, MeshData.VertexColors, MeshData.Tangents, true);
 		
-		ProceduralMeshComponent->CreateMeshSection_LinearColor(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.Uvs, MeshData.VertexColors, MeshData.Tangents, true);
+		ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->Vertices, GridData->Triangles, GridData->Normals, GridData->Uvs, GridData->VertexColors, GridData->Tangents, true);
+
 		ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
 	}
 }

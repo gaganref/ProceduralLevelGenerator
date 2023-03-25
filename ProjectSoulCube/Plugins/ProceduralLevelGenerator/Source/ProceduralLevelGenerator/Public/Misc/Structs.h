@@ -218,6 +218,9 @@ struct FCustomMeshData
 
 	FCustomMeshData(const int32& InWidth, const int32& InHeight)
 	{
+		// Vertices.Reserve((InWidth - 1) * (InHeight - 1) * 6);
+		// VertexColors.Reserve((InWidth - 1) * (InHeight - 1) * 6);
+		// Uvs.Reserve((InWidth - 1) * (InHeight - 1) * 6);
 		Vertices.Reserve(InWidth*InHeight);
 		VertexColors.Reserve(InWidth*InHeight);
 		Uvs.Reserve(InWidth * InHeight);
@@ -249,6 +252,31 @@ struct FCustomMeshData
 	void RecalculateNormalsAndTangents()
 	{
 		UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Vertices, Triangles, Uvs, Normals, Tangents);
+	}
+
+	void FlatShading()
+	{
+		TArray<FVector> FlatShadedVertices;
+		TArray<FVector2D> FlatShadedUvs;
+		TArray<FLinearColor> FlatShadedVertexColors;
+
+		const int32 TrianglesLength = Triangles.Num(); 
+		
+		FlatShadedVertices.Reserve(TrianglesLength);
+		FlatShadedUvs.Reserve(TrianglesLength);
+		FlatShadedVertexColors.Reserve(TrianglesLength);
+
+		for(int Itr=0; Itr<TrianglesLength; Itr++)
+		{
+			FlatShadedVertices.Add(Vertices[Triangles[Itr]]);
+			FlatShadedUvs.Add(Uvs[Triangles[Itr]]);
+			FlatShadedVertexColors.Add(VertexColors[Triangles[Itr]]);
+			Triangles[Itr] = Itr;
+		}
+
+		Vertices = FlatShadedVertices;
+		Uvs = FlatShadedUvs;
+		VertexColors = FlatShadedVertexColors;
 	}
 };
 
@@ -306,3 +334,41 @@ struct PROCEDURALLEVELGENERATOR_API FGridCell
 };
 
 
+// TArray<FVector> CalculateNormals()
+// {
+// 	TArray<FVector> VertexNormals;
+// 	VertexNormals.Init(FVector::ZeroVector, Triangles.Num());
+// 	const int TriangleCount = Triangles.Num()/3;
+//
+// 	for(int Itr=0; Itr<TriangleCount; Itr++)
+// 	{
+// 		const int NormalTriangleIndex = Itr*3;
+// 		int VertexIndexA = Triangles[NormalTriangleIndex];
+// 		int VertexIndexB = Triangles[NormalTriangleIndex + 1];
+// 		int VertexIndexC = Triangles[NormalTriangleIndex + 2];
+// 			
+// 		const FVector TriangleNormal = CalculateSurfaceNormalFromIndices(VertexIndexA, VertexIndexB, VertexIndexC);
+// 		VertexNormals[VertexIndexA] += TriangleNormal;
+// 		VertexNormals[VertexIndexB] += TriangleNormal;
+// 		VertexNormals[VertexIndexC] += TriangleNormal;
+// 	}
+//
+// 	for(int Itr = 0; Itr<VertexNormals.Num(); Itr++)
+// 	{
+// 		VertexNormals[Itr] = VertexNormals[Itr].GetSafeNormal();
+// 	}
+//
+// 	return VertexNormals;
+// }
+//
+// FVector CalculateSurfaceNormalFromIndices(const int32& IndexA, const int32& IndexB, const int32& IndexC)
+// {
+// 	const FVector PointA = Vertices[IndexA];
+// 	const FVector PointB = Vertices[IndexB];
+// 	const FVector PointC = Vertices[IndexC];
+//
+// 	const FVector SideAb = PointB - PointA;
+// 	const FVector SideAc = PointC - PointA;
+//
+// 	return FVector::CrossProduct(SideAb, SideAc).GetSafeNormal();
+// }
