@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Grid/GridDataGenerator.h"
 
+class FMapPreviewScene2D;
+class SMapViewport;
 /**
  * 
  */
@@ -13,17 +15,23 @@ class PROCEDURALLEVELGENERATOREDITOR_API FGridDataGeneratorToolkit : public FAss
 	
 public:
 	
-	void InitEditor(const TArray<UObject*>& InObjects);
+	void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, TObjectPtr<UGridDataGenerator> InGridDataGenerator);
 
 	void RegisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
 	void UnregisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
 
-	FName GetToolkitFName() const override { return "NormalDistributionEditor"; }
-	FText GetBaseToolkitName() const override { return INVTEXT("Normal Distribution Editor"); }
-	FString GetWorldCentricTabPrefix() const override { return "Normal Distribution "; }
+	FName GetToolkitFName() const override { return "GridDataGeneratorEditor"; }
+	FText GetBaseToolkitName() const override { return INVTEXT("GridDataGenerator Editor"); }
+	FString GetWorldCentricTabPrefix() const override { return "GridDataGenerator "; }
 	FLinearColor GetWorldCentricTabColorScale() const override { return {}; }
 
-private:
-	TObjectPtr<UGridDataGenerator> GridDataGenerator;
+	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args) const;
+
+	TArray<FLinearColorArray> GetNoiseColors() const;
 	
+private:
+	
+	TObjectPtr<UGridDataGenerator> GridDataGenerator;
+	TSharedPtr<FMapPreviewScene2D> PreviewScene;
+	TSharedPtr<SMapViewport> PreviewWidget;
 };

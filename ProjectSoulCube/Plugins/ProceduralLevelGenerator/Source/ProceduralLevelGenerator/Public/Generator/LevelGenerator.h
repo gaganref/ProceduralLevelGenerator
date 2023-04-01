@@ -60,10 +60,17 @@ protected:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 protected:
+	UPROPERTY()
+	TArray<FLinearColorArray> NoiseColors;
+
+	UPROPERTY()
+	TArray<FLinearColorArray> MapColors;
+	
 	void InitLevelGenerator();
 
 	void GenerateTextureOnNoisePlane();
 	void GenerateTextureOnMapPlane();
+
 	
 public:
 

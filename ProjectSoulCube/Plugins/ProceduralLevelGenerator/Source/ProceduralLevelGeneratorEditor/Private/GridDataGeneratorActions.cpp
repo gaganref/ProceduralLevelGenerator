@@ -29,5 +29,16 @@ uint32 FGridDataGeneratorAssetTypeActions::GetCategories()
 void FGridDataGeneratorAssetTypeActions::OpenAssetEditor(const TArray<UObject*>& InObjects,
 	TSharedPtr<IToolkitHost> EditWithinLevelEditor)
 {
-	MakeShared<FGridDataGeneratorToolkit>()->InitEditor(InObjects);
+	const EToolkitMode::Type Mode = EditWithinLevelEditor.IsValid() ? EToolkitMode::WorldCentric : EToolkitMode::Standalone;
+
+	for (auto ObjIt = InObjects.CreateConstIterator(); ObjIt; ++ObjIt)
+	{
+		if (TObjectPtr<UGridDataGenerator> PoseSearchDb = Cast<UGridDataGenerator>(*ObjIt))
+		{
+			const TSharedRef<FGridDataGeneratorToolkit> NewEditor(new FGridDataGeneratorToolkit());
+			NewEditor->InitEditor(Mode, EditWithinLevelEditor, PoseSearchDb);
+		}
+	}
+	
+	// MakeShared<FGridDataGeneratorToolkit>()->InitEditor(InObjects);
 }

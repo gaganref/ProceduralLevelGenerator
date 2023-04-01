@@ -3,7 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Brushes/SlateImageBrush.h"
 #include "Widgets/SLeafWidget.h"
+
+struct FLinearColorArray;
+
+static TArray<FLinearColorArray> EmptyLinearColorArray;
 
 /**
  * 
@@ -14,11 +19,9 @@ public:
 public:
 	
 	SLATE_BEGIN_ARGS(SMapTextureViewport)
-		: _Mean(0.5f)
-		, _StandardDeviation(0.2f)
+		: _NoiseColors(EmptyLinearColorArray)
 	{}
-	SLATE_ATTRIBUTE(float, Mean)
-	SLATE_ATTRIBUTE(float, StandardDeviation)
+	SLATE_ATTRIBUTE(TArray<FLinearColorArray>, NoiseColors)
 SLATE_END_ARGS()
 
 	void Construct(const FArguments& InArgs);
@@ -30,8 +33,10 @@ SLATE_END_ARGS()
 	FReply OnMouseButtonUp(const FGeometry& AllottedGeometry, const FPointerEvent& MouseEvent) override;
 	FReply OnMouseMove(const FGeometry& AllottedGeometry, const FPointerEvent& MouseEvent) override;
 private:
-	TAttribute<float> Mean;
-	TAttribute<float> StandardDeviation;
 
+	TAttribute<TArray<FLinearColorArray>> NoiseColors;
+	
 	FTransform2D GetPointsTransform(const FGeometry& AllottedGeometry) const;
+
+	TObjectPtr<FSlateImageBrush> PixelBrush;
 };

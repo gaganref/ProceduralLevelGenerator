@@ -32,13 +32,17 @@ float UNoise::CalculatePerlinValueAtPoint(const int32& MapHalfWidth, const int32
 	const int32& PointY, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity,
 	const TArray<FVector2D>& OctaveOffsets)
 {
+	// To avoid zero division error
+	if(Scale <= 0){Scale = 0.0001f;}
+	
 	float NoiseHeight = 0.0f;
 	float Amplitude = 1.0f;
 	float Frequency = 1.0f;
 			
 	for(int O=0; O < Octaves; ++O)
 	{
-		const FVector2D Sample = FVector2D((PointX - MapHalfWidth), (PointY - MapHalfHeight)) / Scale * Frequency + OctaveOffsets[O];
+		const FVector2D Sample = FVector2D((PointX - MapHalfWidth), (PointY - MapHalfHeight)) / Scale * Frequency + OctaveOffsets[O] * Frequency;
+		// const FVector2D Sample = FVector2D((PointX - MapHalfWidth), (PointY - MapHalfHeight)) / Scale * Frequency + OctaveOffsets[O];
 		const float PerlinValue = FMath::PerlinNoise2D(Sample); // PerlinValue Range is between [-1,1].
 		NoiseHeight += PerlinValue * Amplitude;
 		Amplitude *= Persistence;

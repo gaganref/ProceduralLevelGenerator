@@ -119,6 +119,21 @@ public:
 		LinearColorArray.Add(Value);
 	}
 
+	void AddUninitialized(const int32& Size)
+	{
+		LinearColorArray.AddUninitialized(Size);
+	}
+
+	void Empty()
+	{
+		LinearColorArray.Empty();
+	}
+	
+	void Reset(const int32& Size)	// Same as empty, but doesn't change memory allocations
+	{
+		LinearColorArray.Reset(Size);
+	}
+
 	int32 Num() const
 	{
 		return LinearColorArray.Num();

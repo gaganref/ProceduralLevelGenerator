@@ -4,30 +4,50 @@
 #include "SMapTextureViewport.h"
 
 #include "Editor.h"
+#include "Misc/Structs.h"
 
 
 void SMapTextureViewport::Construct(const FArguments& InArgs)
 {
-	Mean = InArgs._Mean;
-	StandardDeviation = InArgs._StandardDeviation;
+	NoiseColors = InArgs._NoiseColors;
+
+	PixelBrush = new FSlateImageBrush
+	(
+		TEXT(""),
+		FVector2D(32, 32),
+		FSlateColor(FLinearColor::Red),
+		ESlateBrushTileType::NoTile,
+		ESlateBrushImageType::NoImage
+	);
+	PixelBrush->Margin = FMargin(0);
+	PixelBrush->DrawAs = ESlateBrushDrawType::Image;
 }
 
 int32 SMapTextureViewport::OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry,
 	const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId,
 	const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
 {
-	const int32 NumPoints = 512;
-	TArray<FVector2D> Points;
-	Points.Reserve(NumPoints);
-	const FTransform2D PointsTransform = GetPointsTransform(AllottedGeometry);
-	for (int32 PointIndex = 0; PointIndex < NumPoints; ++PointIndex)
+	int32 MaxX = NoiseColors.Get().Num();
+	int32 MaxY = 0;
+	if(MaxX > 0)
 	{
-		const float X = PointIndex / (NumPoints - 1.0);
-		const float D = (X - Mean.Get()) / StandardDeviation.Get();
-		const float Y = FMath::Exp(-0.5f * D * D);
-		Points.Add(PointsTransform.TransformPoint(FVector2D(X, Y)));
+		MaxY = NoiseColors.Get()[0].Num();
 	}
 	
+	FVector2d Offset = FVector2D(4.0f, 4.0f);
+	FVector2D LocalSize = FVector2D(1.0f, 1.0f);
+	
+	for(int X=0; X < MaxX; ++X)
+	{
+		Offset.Y = 4.0f;
+		for(int Y=0; Y < MaxY; ++Y)
+		{
+			FPaintGeometry PaintGeom = AllottedGeometry.ToPaintGeometry(Offset, LocalSize, 5.0f);
+			FSlateDrawElement::MakeBox(OutDrawElements, LayerId, PaintGeom, PixelBrush, ESlateDrawEffect::None, NoiseColors.Get()[X][Y]);
+			Offset.Y = Offset.Y + LocalSize.Y;
+		}
+		Offset.X = Offset.X + LocalSize.X;
+	}
 	return LayerId;
 }
 

@@ -113,7 +113,7 @@ public:
 
 	//NOTE: verts cap = 1,000,000. i.e no of verts = total tris * no of verts for each tri
 	
-	UPROPERTY()
+	UPROPERTY(Category = "Mesh Data", BlueprintReadOnly)
 	TArray<FVector> Vertices;
 	
 	UPROPERTY()
@@ -172,7 +172,9 @@ protected:
 	 */
 	virtual void InitGrid();
 
-	virtual void InitGrid_Test();
+	virtual void InitGrid_Triangle_Shading();
+	
+	virtual void InitGrid_Quad_Shading();
 
 	virtual void ClearData();
 
@@ -192,10 +194,6 @@ public:
 	FORCEINLINE int32 GetColumns() const {return Columns;}
 
 	FORCEINLINE int32 GetSeed() const {return Seed;}
-
-	FORCEINLINE int32 GetRows1() const {return Rows;}
-
-	FORCEINLINE int32 GetColumns1() const {return Columns;}
 
 	FORCEINLINE float GetScale() const {return Scale;}
 
