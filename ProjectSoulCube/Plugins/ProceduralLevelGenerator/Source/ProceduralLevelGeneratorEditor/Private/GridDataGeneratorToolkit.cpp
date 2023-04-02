@@ -3,6 +3,9 @@
 
 #include "GridDataGeneratorToolkit.h"
 
+#include "EditorStyleSet.h"
+#include "EditorStyleSet.h"
+#include "EditorStyleSet.h"
 #include "MapPreviewScene2D.h"
 #include "MapViewport.h"
 #include "Widgets/SMapTextureViewport.h"
@@ -40,53 +43,66 @@ void FGridDataGeneratorToolkit::InitEditor(const EToolkitMode::Type Mode, const 
 			->Split
 			(
 				FTabManager::NewSplitter()->SetOrientation(Orient_Vertical)
-				->SetSizeCoefficient(0.75f)
+				->SetSizeCoefficient(0.7f)
 				->Split
 				(
 					FTabManager::NewSplitter()->SetOrientation(Orient_Horizontal)
-					->Split
-					(
-					FTabManager::NewStack()
-						->SetSizeCoefficient(0.5f)
-						->AddTab("GridDataGeneratorViewportTab", ETabState::OpenedTab)
-					)
+					->SetSizeCoefficient(0.7f)
 					->Split
 					(
 					FTabManager::NewStack()
 						->SetSizeCoefficient(0.5f)
 						->AddTab("NoiseMapTab", ETabState::OpenedTab)
 					)
+					->Split
+					(
+					FTabManager::NewStack()
+						->SetSizeCoefficient(0.5f)
+						->AddTab("ColorMapTab", ETabState::OpenedTab)
+					)
 				)
 				->Split
 				(
 					FTabManager::NewStack()
-					->SetSizeCoefficient(0.35f)
+					->SetSizeCoefficient(0.3f)
 					->AddTab("OutputLog", ETabState::OpenedTab)
 				)
 			)
 			->Split
 			(
 				FTabManager::NewStack()
-				->SetSizeCoefficient(0.25f)
+				->SetSizeCoefficient(0.3f)
 				->AddTab("GridDataGeneratorDetailsTab", ETabState::OpenedTab)
 			)
 		)
 	);
-	
+	//
+	// // Create a new UI action for our toolbar button
+	// GenerateCommand = UI_COMMAND(
+	// 	// The command name
+	// 	"MyCustomEditor.MyCommand",
+	// 	// The command description (for display purposes)
+	// 	"My Custom Command",
+	// 	// The tooltip for the command
+	// 	"Execute my custom command",
+	// 	// The UI action type (e.g. button)
+	// 	EUserInterfaceActionType::Button,
+	// 	// The input gesture for the command (optional)
+	// 	FInputGesture()
+	// );
+
+	// // Add the toolbar button to the editor UI
+	// ExtendMenu()
+	// 	.AddToolbarExtension(
+	// 		"Asset",
+	// 		EExtensionHook::After,
+	// 		GenerateCommand,
+	// 		FToolBarDelegate::CreateRaw(this, &FGridDataGeneratorToolkit::AddToolbarButton)
+	// 	);
+	//
 	InitAssetEditor(EToolkitMode::Standalone, {}, "GridDataGeneratorEditor", Layout, true, true, InGridDataGenerator);
 }
 
-TSharedRef<SDockTab> FGridDataGeneratorToolkit::SpawnTab_Viewport(const FSpawnTabArgs& Args) const
-{
-	TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab).Label(LOCTEXT("ViewportTab_Title", "Viewport"));
-
-	if (PreviewWidget.IsValid())
-	{
-		SpawnedTab->SetContent(PreviewWidget.ToSharedRef());
-	}
-
-	return SpawnedTab;
-}
 
 void FGridDataGeneratorToolkit::RegisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
@@ -94,24 +110,35 @@ void FGridDataGeneratorToolkit::RegisterTabSpawners(const TSharedRef<FTabManager
 
 	WorkspaceMenuCategory = InTabManager->AddLocalWorkspaceMenuCategory(INVTEXT("GridDataGenerator Editor"));
 
-	//Register Viewport
-	InTabManager->RegisterTabSpawner(
-	"GridDataGeneratorViewportTab",
-	FOnSpawnTab::CreateSP(this, &FGridDataGeneratorToolkit::SpawnTab_Viewport))
-	.SetDisplayName(LOCTEXT("PreviewSceneViewport", "Preview Viewport"))
-	.SetGroup(WorkspaceMenuCategory.ToSharedRef())
-	.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "GraphEditor.EventGraph_16x"));
+	//Register Tabs
 
 	InTabManager->RegisterTabSpawner("NoiseMapTab", FOnSpawnTab::CreateLambda([=](const FSpawnTabArgs&)
 	{
 		return SNew(SDockTab)
 		[
-			SNew(SMapTextureViewport)
-			.NoiseColors(this, &FGridDataGeneratorToolkit::GetNoiseColors)
+		SNew(SMapTextureViewport)
+		.Width(this, &FGridDataGeneratorToolkit::GetRows)
+		.Height(this, &FGridDataGeneratorToolkit::GetColumns)
+		.ColorsRaw(this, &FGridDataGeneratorToolkit::GetNoiseColorsRaw)
 		];
 	}))
 	.SetDisplayName(INVTEXT("Noise Map"))
-	.SetGroup(WorkspaceMenuCategory.ToSharedRef());
+	.SetGroup(WorkspaceMenuCategory.ToSharedRef())
+	.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelViewport.Icon"));
+	
+	InTabManager->RegisterTabSpawner("ColorMapTab", FOnSpawnTab::CreateLambda([=](const FSpawnTabArgs&)
+	{
+		return SNew(SDockTab)
+		[
+			SNew(SMapTextureViewport)
+			.Width(this, &FGridDataGeneratorToolkit::GetRows)
+			.Height(this, &FGridDataGeneratorToolkit::GetColumns)
+			.ColorsRaw(this, &FGridDataGeneratorToolkit::GetMapColorsRaw)
+		];
+	}))
+	.SetDisplayName(INVTEXT("Color Map"))
+	.SetGroup(WorkspaceMenuCategory.ToSharedRef())
+	.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Levels"));
 	
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	
@@ -128,21 +155,66 @@ void FGridDataGeneratorToolkit::RegisterTabSpawners(const TSharedRef<FTabManager
 			DetailsView
 		];
 	}))
-	.SetDisplayName(INVTEXT("Details"))
-	.SetGroup(WorkspaceMenuCategory.ToSharedRef());
+	.SetDisplayName(INVTEXT("Properties")) // Grid Data
+	.SetGroup(WorkspaceMenuCategory.ToSharedRef())
+	.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "LevelEditor.Tabs.Properties")); //DataTableEditor.Paste.Small
 }
 
 void FGridDataGeneratorToolkit::UnregisterTabSpawners(const TSharedRef<FTabManager>& InTabManager)
 {
 	FAssetEditorToolkit::UnregisterTabSpawners(InTabManager);
-	InTabManager->UnregisterTabSpawner("GridDataGeneratorViewportTab");
-	InTabManager->UnregisterTabSpawner("GridDataGeneratorDetailsTab");
 	InTabManager->UnregisterTabSpawner("NoiseMapTab");
+	InTabManager->UnregisterTabSpawner("ColorMapTab");
+	InTabManager->UnregisterTabSpawner("GridDataGeneratorDetailsTab");
+}
+
+// void FGridDataGeneratorToolkit::AddToolbarButton(FToolBarBuilder& ToolbarBuilder)
+// {
+// 	// Add the toolbar button to the builder
+// 	ToolbarBuilder.AddToolBarButton(
+// 		GenerateCommand,
+// 		// Tooltip for the button
+// 		TEXT("generate Grid Data"),
+// 		// Icon for the button (optional)
+// 		FSlateIcon(),
+// 		// Execution method for the button
+// 		FExecuteAction::CreateRaw(this, &FGridDataGeneratorToolkit::GenerateGridData)
+// 	);
+// }
+
+void FGridDataGeneratorToolkit::GenerateGridData()
+{
+	UE_LOG(LogTemp, Warning, TEXT("lfgjeoighojfe"));
+}
+
+int32 FGridDataGeneratorToolkit::GetRows() const
+{
+	return GridDataGenerator->GetRows();
+}
+
+int32 FGridDataGeneratorToolkit::GetColumns() const
+{
+	return GridDataGenerator->GetColumns();
+}
+
+TArray<uint8> FGridDataGeneratorToolkit::GetNoiseColorsRaw() const
+{
+	return GridDataGenerator->GetNoiseColorsRaw();
 }
 
 TArray<FLinearColorArray> FGridDataGeneratorToolkit::GetNoiseColors() const
 {
 	return GridDataGenerator->GetNoiseColors();
+}
+
+TArray<uint8> FGridDataGeneratorToolkit::GetMapColorsRaw() const
+{
+	return GridDataGenerator->GetMapColorsRaw();
+}
+
+TArray<FLinearColorArray> FGridDataGeneratorToolkit::GetMapColors() const
+{
+	return GridDataGenerator->GetMapColors();
 }
 
 #undef LOCTEXT_NAMESPACE

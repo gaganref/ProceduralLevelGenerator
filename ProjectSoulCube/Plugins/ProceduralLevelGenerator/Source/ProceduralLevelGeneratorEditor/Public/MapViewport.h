@@ -3,6 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Widgets/SViewport.h"
+
+
 #include "AdvancedPreviewScene.h"
 #include "SCommonEditorViewportToolbarBase.h"
 #include "SEditorViewport.h"
@@ -58,3 +61,19 @@ public:
 	//Shared ptr to the client
 	TSharedPtr<FMapViewportClient> TypedViewportClient;
 };
+//
+// struct FLinearColorArray;
+//
+// class PROCEDURALLEVELGENERATOREDITOR_API SMapViewport : public SViewport
+// {
+//
+// public:
+// 	SLATE_BEGIN_ARGS(SMapViewport) {}
+// 	SLATE_END_ARGS()
+//
+// 	void Construct(const FArguments& InArgs, TArray<FLinearColorArray> MapColors);
+// 	
+// 	virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
+//     
+// 	void Paint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const;
+// };

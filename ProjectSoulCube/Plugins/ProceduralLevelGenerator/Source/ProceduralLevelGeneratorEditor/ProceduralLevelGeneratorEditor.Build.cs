@@ -38,7 +38,8 @@ public class ProceduralLevelGeneratorEditor : ModuleRules
 				"SlateCore",
 				"ProceduralLevelGenerator",
 				"UnrealEd",
-				"AssetTools",
+				"AssetTools", 
+				"EditorStyle"
 				// ... add private dependencies that you statically link with here ...	
 			}
 		);

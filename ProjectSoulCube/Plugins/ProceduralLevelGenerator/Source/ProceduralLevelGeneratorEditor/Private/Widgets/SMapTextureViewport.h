@@ -3,40 +3,38 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Brushes/SlateImageBrush.h"
 #include "Widgets/SLeafWidget.h"
 
 struct FLinearColorArray;
-
-static TArray<FLinearColorArray> EmptyLinearColorArray;
 
 /**
  * 
  */
 class PROCEDURALLEVELGENERATOREDITOR_API SMapTextureViewport : public SLeafWidget
 {
-public:
+	
 public:
 	
 	SLATE_BEGIN_ARGS(SMapTextureViewport)
-		: _NoiseColors(EmptyLinearColorArray)
 	{}
-	SLATE_ATTRIBUTE(TArray<FLinearColorArray>, NoiseColors)
+	SLATE_ATTRIBUTE(int32, Width)
+	SLATE_ATTRIBUTE(int32, Height)
+	SLATE_ATTRIBUTE(TArray<uint8>, ColorsRaw)
 SLATE_END_ARGS()
 
+	
 	void Construct(const FArguments& InArgs);
 
-	int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
-	FVector2D ComputeDesiredSize(float) const override;
-
-	FReply OnMouseButtonDown(const FGeometry& AllottedGeometry, const FPointerEvent& MouseEvent) override;
-	FReply OnMouseButtonUp(const FGeometry& AllottedGeometry, const FPointerEvent& MouseEvent) override;
-	FReply OnMouseMove(const FGeometry& AllottedGeometry, const FPointerEvent& MouseEvent) override;
+	virtual int32 OnPaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
+	virtual FVector2D ComputeDesiredSize(float) const override;
+	
 private:
 
-	TAttribute<TArray<FLinearColorArray>> NoiseColors;
-	
-	FTransform2D GetPointsTransform(const FGeometry& AllottedGeometry) const;
+	TAttribute<int32> Width;
 
-	TObjectPtr<FSlateImageBrush> PixelBrush;
+	TAttribute<int32> Height;
+
+	TAttribute<TArray<uint8>> ColorsRaw;
+
+	TObjectPtr<FSlateBrush> TextureBrush;
 };

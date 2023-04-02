@@ -17,21 +17,39 @@ public:
 	
 	void InitEditor(const EToolkitMode::Type Mode, const TSharedPtr<IToolkitHost>& InitToolkitHost, TObjectPtr<UGridDataGenerator> InGridDataGenerator);
 
-	void RegisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
-	void UnregisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
+	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
+	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
 
-	FName GetToolkitFName() const override { return "GridDataGeneratorEditor"; }
-	FText GetBaseToolkitName() const override { return INVTEXT("GridDataGenerator Editor"); }
-	FString GetWorldCentricTabPrefix() const override { return "GridDataGenerator "; }
-	FLinearColor GetWorldCentricTabColorScale() const override { return {}; }
+	virtual FName GetToolkitFName() const override { return "GridDataGeneratorEditor"; }
+	virtual FText GetBaseToolkitName() const override { return INVTEXT("GridDataGenerator Editor"); }
+	virtual FString GetWorldCentricTabPrefix() const override { return "GridDataGenerator "; }
+	virtual FLinearColor GetWorldCentricTabColorScale() const override { return {}; }
+	
+	void GenerateGridData();
+	
+	int32 GetRows() const;
 
-	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& Args) const;
-
+	int32 GetColumns() const;
+	
+	TArray<uint8> GetNoiseColorsRaw() const;
+	
 	TArray<FLinearColorArray> GetNoiseColors() const;
+	
+	TArray<uint8> GetMapColorsRaw() const;
+	
+	TArray<FLinearColorArray> GetMapColors() const;
 	
 private:
 	
 	TObjectPtr<UGridDataGenerator> GridDataGenerator;
+	
 	TSharedPtr<FMapPreviewScene2D> PreviewScene;
+	
 	TSharedPtr<SMapViewport> PreviewWidget;
+
+	// UI action that will be bound to the toolbar button
+	TSharedPtr<FUICommandInfo> GenerateCommand;
+
+	// Create the toolbar button
+	// void AddToolbarButton(FToolBarBuilder& ToolbarBuilder);
 };

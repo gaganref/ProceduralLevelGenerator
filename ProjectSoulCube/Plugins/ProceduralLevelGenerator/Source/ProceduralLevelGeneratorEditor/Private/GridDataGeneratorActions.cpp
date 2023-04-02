@@ -39,6 +39,4 @@ void FGridDataGeneratorAssetTypeActions::OpenAssetEditor(const TArray<UObject*>&
 			NewEditor->InitEditor(Mode, EditWithinLevelEditor, PoseSearchDb);
 		}
 	}
-	
-	// MakeShared<FGridDataGeneratorToolkit>()->InitEditor(InObjects);
 }
