@@ -26,6 +26,7 @@ void UGridDataGenerator::GenerateData()
 void UGridDataGenerator::GenerateGridData(const bool bCanGenerateMeshData)
 {
 	NoiseData = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
+	NoiseDataNormalized = UNoise::NormalizeNoiseMap(NoiseData, HeightMultiplierCurve, MeshHeightMultiplier);
 	
 	GenerateGridColorData();
 	DisplayFinalGridColorData();
@@ -118,24 +119,23 @@ void UGridDataGenerator::GenerateGridColorData()
 			NoiseColorsRaw[Itr+1] = CurrentNoiseColor.G * 255;
 			NoiseColorsRaw[Itr+2] = CurrentNoiseColor.R * 255;
 			NoiseColorsRaw[Itr+3] = CurrentNoiseColor.A * 255;
-			
-			FLinearColor CurrentRegionColor = FLinearColor::Red;
-			
+
+			int32 CurrentRegionIndex = 0;
 			for(const auto& Region : LevelRegions)	// TODO: Can Improve Performance.
 			{
 				if(CurrentHeight <= Region.MaxHeight)
 				{
-					CurrentRegionColor = Region.LinearColor;
+					MapColors[X][Y] = Region.LinearColor;
+
+					MapColorsRaw[Itr] = Region.LinearColor.B * 255;
+					MapColorsRaw[Itr+1] = Region.LinearColor.G * 255;
+					MapColorsRaw[Itr+2] = Region.LinearColor.R * 255;
+					MapColorsRaw[Itr+3] = Region.LinearColor.A * 255;
 					break;
 				}
-			}
-			
-			MapColors[X][Y] = CurrentRegionColor;
 
-			MapColorsRaw[Itr] = CurrentRegionColor.B * 255;
-			MapColorsRaw[Itr+1] = CurrentRegionColor.G * 255;
-			MapColorsRaw[Itr+2] = CurrentRegionColor.R * 255;
-			MapColorsRaw[Itr+3] = CurrentRegionColor.A * 255;
+				CurrentRegionIndex++;
+			}
 
 			Itr += 4;
 		}
@@ -162,11 +162,11 @@ void UGridDataGenerator::GenerateGridMeshData()
 			//Mesh
 
 			// Noise Heights for quad vertex points
-			const float BottomLeftNoiseHeight = FMath::Clamp(HeightMultiplierCurve.GetRichCurveConst()->Eval(NoiseData[X][Y]), 0.0f, 1.0f) * MeshHeightMultiplier;
-			const float BottomRightNoiseHeight = FMath::Clamp(HeightMultiplierCurve.GetRichCurveConst()->Eval(NoiseData[X][Y+1]), 0.0f, 1.0f) * MeshHeightMultiplier;
-			const float TopRightIndexNoiseHeight = FMath::Clamp(HeightMultiplierCurve.GetRichCurveConst()->Eval(NoiseData[X+1][Y+1]), 0.0f, 1.0f) * MeshHeightMultiplier;
-			const float TopLeftIndexNoiseHeight = FMath::Clamp(HeightMultiplierCurve.GetRichCurveConst()->Eval(NoiseData[X+1][Y]), 0.0f, 1.0f) * MeshHeightMultiplier;
 			
+			const float BottomLeftNoiseHeight = NoiseDataNormalized[X][Y];
+			const float BottomRightNoiseHeight = NoiseDataNormalized[X][Y+1];
+			const float TopRightIndexNoiseHeight = NoiseDataNormalized[X+1][Y+1];
+			const float TopLeftIndexNoiseHeight = NoiseDataNormalized[X+1][Y];
 			
 			// Triangle A
 			const int32 BottomLeftIndex_A = VertexIndex++;
@@ -199,7 +199,6 @@ void UGridDataGenerator::GenerateGridMeshData()
 			Normals[BottomLeftIndex_A] = Normals[TopRightIndex_A] = Normals[TopLeftIndex_A] = Normal_A;
 
 			// Tangents (perpendicular to the surface)
-			// const FVector SurfaceTangent_A = (FVector(TopLeftX + X, TopLeftY + Y, BottomLeftNoiseHeight) - FVector(TopLeftX + X, TopLeftY + Y + 1, BottomRightNoiseHeight)).GetSafeNormal();
 			const FVector SurfaceTangent_A = (Vertices[BottomLeftIndex_A] + Vertices[TopRightIndex_A] + Vertices[TopLeftIndex_A] / 3).GetSafeNormal();
 			const FProcMeshTangent Tangent_A = FProcMeshTangent(SurfaceTangent_A, false);
 			Tangents[BottomLeftIndex_A] = Tangents[TopRightIndex_A] = Tangents[TopLeftIndex_A] = Tangent_A;

@@ -4,6 +4,7 @@
 #include "Generator/LevelGenerator.h"
 
 #include "Grid/Grid.h"
+#include "Grid/GridDataGenerator.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/CustomProceduralMeshComponent.h"
 #include "Misc/DynamicTextureComponent.h"
@@ -117,7 +118,21 @@ void ALevelGenerator::GenerateTextureOnMapPlane()
 
 	if(bShowMesh)
 	{
-		ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->Vertices, GridData->Triangles, GridData->Normals, GridData->Uvs, GridData->VertexColors, GridData->Tangents, true);
+		ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->GetVertices(), GridData->GetTriangles(), GridData->GetNormals(), GridData->GetUvs(), GridData->GetVertexColors(), GridData->GetTangents(), true);
 		ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
 	}
+}
+
+void ALevelGenerator::GenerateMesh()
+{
+	// if(!GridData)
+	// {
+	// 	return;
+	// }
+	//
+	// if(bShowMesh)
+	// {
+	// 	ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->GetVertices(), GridData->GetTriangles(), GridData->GetNormals(), GridData->GetUvs(), GridData->GetVertexColors(), GridData->GetTangents(), true);
+	// 	ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
+	// }
 }

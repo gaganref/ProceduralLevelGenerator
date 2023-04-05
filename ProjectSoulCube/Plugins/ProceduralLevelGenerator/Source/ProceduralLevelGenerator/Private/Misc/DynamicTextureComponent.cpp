@@ -162,6 +162,17 @@ void UDynamicTextureComponent::SetAllPixels(const TArray<FLinearColorArray>& Col
 	// UpdateTexture();
 }
 
+void UDynamicTextureComponent::CreateTextureRaw(const TArray<uint8>& ColorsRaw) const
+{
+	if(ColorsRaw.Num() != (TextureWidth * TextureHeight * 4))
+	{
+		return;
+	}
+
+	FMemory::Memcpy(Texture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE), ColorsRaw.GetData(), ColorsRaw.Num());
+	Texture->GetPlatformData()->Mips[0].BulkData.Unlock();
+}
+
 void UDynamicTextureComponent::FillRect(const int32& X, const int32& Y, const int32& Width, const int32& Height, const FLinearColor& Color) const
 {
 	// Will hold the current pixel

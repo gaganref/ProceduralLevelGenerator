@@ -63,10 +63,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Texture")
 	void Fill(const FLinearColor& Color) const;
 
-	// Fills the texture with a given color
+	// Fills the texture with a given colors array
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Texture")
 	void SetAllPixels(const TArray<FLinearColorArray>& Colors) const;
 
+	// Creates the Dynamic texture using raw BGRA values
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Texture")
+	void CreateTextureRaw(const TArray<uint8>& ColorsRaw) const;
+	
 	// Fills a rectangle area of the texture with a given color
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Texture")
 	void FillRect(const int32& X, const int32& Y, const int32& Width, const int32& Height, const FLinearColor& Color) const;

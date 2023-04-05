@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "LevelGenerator.generated.h"
 
+class UGridDataGenerator;
 class UGrid;
 struct FTerrainType;
 class UDynamicTextureComponent;
@@ -70,6 +71,7 @@ protected:
 
 	void GenerateTextureOnNoisePlane();
 	void GenerateTextureOnMapPlane();
+	void GenerateMesh();
 
 	
 public:
@@ -79,9 +81,9 @@ public:
 
 
 public:
-	
+
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
-	TObjectPtr<UGrid> GridData;
+	TObjectPtr<UGridDataGenerator> GridData;
 	
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly)
 	int32 Seed = 231;

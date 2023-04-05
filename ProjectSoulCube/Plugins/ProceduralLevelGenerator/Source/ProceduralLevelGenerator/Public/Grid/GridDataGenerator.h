@@ -22,6 +22,9 @@ class PROCEDURALLEVELGENERATOR_API UGridDataGenerator : public UObject
 private:
 	UPROPERTY()
 	TArray<FFloatArray> NoiseData;
+
+	UPROPERTY()
+	TArray<FFloatArray> NoiseDataNormalized;
 	
 protected:
 
