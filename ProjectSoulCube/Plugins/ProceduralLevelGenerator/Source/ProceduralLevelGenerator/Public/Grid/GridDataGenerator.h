@@ -20,11 +20,11 @@ class PROCEDURALLEVELGENERATOR_API UGridDataGenerator : public UObject
 	GENERATED_BODY()
 
 private:
-	UPROPERTY()
-	TArray<FFloatArray> NoiseData;
-
-	UPROPERTY()
-	TArray<FFloatArray> NoiseDataNormalized;
+	// UPROPERTY()
+	// TArray<FFloatArray> NoiseData;
+	//
+	// UPROPERTY()
+	// TArray<FFloatArray> NoiseDataNormalized;
 	
 protected:
 
@@ -60,40 +60,12 @@ protected:
 	
 	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
 	float MeshHeightMultiplier = 36.0f;
-
+	
 	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
-	FRuntimeFloatCurve HeightMultiplierCurve;
+	TObjectPtr<UCurveFloat> HeightMultiplierCurve;
 	
-	UPROPERTY(Category = "Noise Data", VisibleAnywhere, BlueprintReadOnly)
-	FVector2D NoiseColorsSize;
-
-	UPROPERTY(Category = "Noise Data", VisibleAnywhere, BlueprintReadOnly)
-	int32 NoiseColorsRawSize;
-	
-	UPROPERTY(Category = "Noise Data", VisibleAnywhere, BlueprintReadOnly)
-	FVector2D MapColorsSize;
-
-	UPROPERTY(Category = "Noise Data", VisibleAnywhere, BlueprintReadOnly)
-	int32 MapColorsRawSize;
-
-	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
-	int32 MeshVertexSize;
-
-	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
-	int32 MeshUvsSize;
-	
-	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
-	int32 MeshTriangleSize;
-
-	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
-	int32 MeshNormalsSize;
-	
-	UPROPERTY(Category = "Mesh Data", VisibleAnywhere, BlueprintReadOnly)
-	int32 MeshTangentsSize;
-
-
 protected:
-
+	
 	UPROPERTY()
 	TArray<uint8> NoiseColorsRaw;
 	
@@ -107,10 +79,13 @@ protected:
 	TArray<FLinearColorArray> MapColors;
 
 	UPROPERTY()
-	TArray<FVector> Vertices;
+	TArray<FCell> Cells;
+
+	UPROPERTY()
+	TArray<uint32> SectionCellCount;
 	
 	UPROPERTY()
-	TArray<FLinearColor> VertexColors;
+	TArray<FVector> Vertices;
 
 	UPROPERTY()
 	TArray<FVector2D> Uvs;
@@ -123,6 +98,9 @@ protected:
 
 	UPROPERTY()
 	TArray<struct FProcMeshTangent> Tangents;
+
+	UPROPERTY()
+	TArray<struct FLevelSection> MeshSectionsData;
 
 protected:
 
@@ -139,14 +117,8 @@ protected:
 	virtual void GenerateGridColorData();
 	
 	virtual void GenerateGridMeshData();	// Flat shading with tris
-	
-	
-	UE_DEPRECATED(5.1, "Dont use this instead use InitGridData and GenerateGridColors and GenerateGridmesh")
-	virtual void InitGrid();
 
-	UE_DEPRECATED(5.1, "Dont use this instead use InitGridData and GenerateGridColors")
-	virtual void InitColorsOnly();
-
+	virtual void GenerateGridMeshSectionsData();	// Flat shading with tris
 		
 #if WITH_EDITOR
 	
@@ -157,17 +129,9 @@ protected:
 	
 #endif
 
-private:
-
-	void DisplayFinalGridColorData();
-	
-	void DisplayFinalGridMeshData();
-
 public:
 
 	// Getters
-
-	FORCEINLINE const TArray<FFloatArray>& GetNoiseData() const {return NoiseData;}
 	
 	FORCEINLINE int32 GetRows() const {return Rows;}
 	
@@ -199,16 +163,16 @@ public:
 
 	FORCEINLINE const TArray<FVector>& GetVertices() const {return Vertices;}
 
-	FORCEINLINE const TArray<FLinearColor>& GetVertexColors() const {return VertexColors;}
-
 	FORCEINLINE const TArray<FVector2D>& GetUvs() const {return Uvs;}
 
 	FORCEINLINE const TArray<int32>& GetTriangles() const {return Triangles;}
 
 	FORCEINLINE const TArray<FVector>& GetNormals() const {return Normals;}
 
+	FORCEINLINE const TArray<struct FLevelSection>& GetMeshSectionsData() const {return MeshSectionsData;}
+	
 	FORCEINLINE const TArray<FProcMeshTangent>& GetTangents() const {return Tangents;}
-
+	
 	UFUNCTION(CallInEditor)
 	void GenerateData();
 };

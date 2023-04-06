@@ -28,6 +28,6 @@ class PROCEDURALLEVELGENERATOR_API UNoise : public UBlueprintFunctionLibrary
 	                                            FVector2D& Offset);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Normalize Noise Map", Keywords = "Perlin Noise Map Normalize"), Category = "Noise")
-	static TArray<FFloatArray> NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const FRuntimeFloatCurve& NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin = 0.0f, const float& ClampMax = 1.0f);
+	static TArray<FFloatArray> NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin = 0.0f, const float& ClampMax = 1.0f);
 
 };

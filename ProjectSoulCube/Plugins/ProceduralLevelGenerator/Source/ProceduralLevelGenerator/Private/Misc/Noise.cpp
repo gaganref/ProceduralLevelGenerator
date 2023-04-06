@@ -84,7 +84,7 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 	return NoiseMap;
 }
 
-TArray<FFloatArray> UNoise::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const FRuntimeFloatCurve& NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax)
+TArray<FFloatArray> UNoise::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax)
 {
 	if(NoiseMap.Num() < 1)
 	{
@@ -100,7 +100,7 @@ TArray<FFloatArray> UNoise::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMa
 	{
 		for (int X = 0; X < Width; ++X)
 		{
-			OutNoiseMap[X][Y] = FMath::Clamp(NormalizeCurve.GetRichCurveConst()->Eval(OutNoiseMap[X][Y]), ClampMin, ClampMax) * MeshHeightMultiplier;
+			OutNoiseMap[X][Y] = FMath::Clamp(NormalizeCurve->GetFloatValue(OutNoiseMap[X][Y]), ClampMin, ClampMax) * MeshHeightMultiplier;
 		}
 	}
 

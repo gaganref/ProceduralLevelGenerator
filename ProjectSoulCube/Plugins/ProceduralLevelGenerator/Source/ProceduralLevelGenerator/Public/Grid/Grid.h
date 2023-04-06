@@ -101,9 +101,6 @@ protected:
 
 	UPROPERTY()
 	TArray<FLinearColorArray> MapColors;
-	
-	UPROPERTY()
-	TArray<FGridCell> GridCells;
 
 	UPROPERTY()
 	FCustomMeshData MeshData;
@@ -214,8 +211,6 @@ public:
 	FORCEINLINE const TArray<FLinearColorArray>& GetNoiseColors() const {return NoiseColors;}
 
 	FORCEINLINE const TArray<FLinearColorArray>& GetMapColors() const {return MapColors;}
-
-	FORCEINLINE const TArray<FGridCell>& GetGridCells() const {return GridCells;}
 
 	FORCEINLINE const FCustomMeshData& GetMeshData() const {return MeshData;}
 };

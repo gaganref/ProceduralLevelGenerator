@@ -12,6 +12,7 @@
 #include "Misc/Structs.h"
 
 static TArray<FLinearColorArray> PixelColorArrayEmpty;
+static const TArray<FLinearColor> EmptyVertexColors;
 
 // Sets default values
 ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
@@ -116,10 +117,29 @@ void ALevelGenerator::GenerateTextureOnMapPlane()
 	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
 	MapPlane->SetMaterial(0, DynamicMaterial);
 
+	// if(bShowMesh)
+	// {
+	// 	ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->GetVertices(), GridData->GetTriangles(), GridData->GetNormals(), GridData->GetUvs(), EmptyVertexColors, GridData->GetTangents(), true);
+	// 	ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
+	// }
+
 	if(bShowMesh)
 	{
-		ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->GetVertices(), GridData->GetTriangles(), GridData->GetNormals(), GridData->GetUvs(), GridData->GetVertexColors(), GridData->GetTangents(), true);
-		ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
+		int32 SectionIndex= 0;
+		for(const auto& Section : GridData->GetMeshSectionsData())
+		{
+			TArray<FVector> SectionNormals;
+			TArray<struct FProcMeshTangent> SectionTangents;
+			
+			TObjectPtr<UMaterialInstance> CurrentMaterial = GridData->GetLevelRegions()[SectionIndex].RegionMaterial;
+			
+			Section.CalculateSectionNormalsAndTangents(SectionNormals, SectionTangents);
+	
+			ProceduralMeshComponent->CreateMeshSection_LinearColor(SectionIndex, Section.Vertices, Section.Triangles, SectionNormals, Section.Uvs, EmptyVertexColors, SectionTangents, true);
+			ProceduralMeshComponent->SetMaterial(SectionIndex, CurrentMaterial);
+	
+			SectionIndex++;
+		}
 	}
 }
 
