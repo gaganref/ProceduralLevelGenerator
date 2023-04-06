@@ -3,15 +3,10 @@
 
 #include "Generator/LevelGenerator.h"
 
-#include "Grid/Grid.h"
 #include "Grid/GridDataGenerator.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Misc/CustomProceduralMeshComponent.h"
-#include "Misc/DynamicTextureComponent.h"
-#include "Misc/Noise.h"
 #include "Misc/Structs.h"
 
-static TArray<FLinearColorArray> PixelColorArrayEmpty;
 static const TArray<FLinearColor> EmptyVertexColors;
 
 // Sets default values
@@ -21,23 +16,7 @@ ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
 	PrimaryActorTick.bCanEverTick = true;
 
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
-
-	// Make the scene component the root component
 	RootComponent = SceneComponent;
-
-#if WITH_EDITORONLY_DATA
-	NoisePlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Noise Plane"));
-	NoisePlane->SetupAttachment(SceneComponent);
-	
-	MapPlane = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Map Plane"));
-	MapPlane->SetupAttachment(SceneComponent);
-#endif
-
-	NoiseTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Noise Texture Component"));
-	NoiseTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
-
-	MapTextureComponent = CreateDefaultSubobject<UDynamicTextureComponent>(TEXT("Map Texture Component"));
-	MapTextureComponent->Initialize(Rows, Columns, FLinearColor::White, PixelColorArrayEmpty);
 
 	ProceduralMeshComponent = CreateDefaultSubobject<UCustomProceduralMeshComponent>(TEXT("Procedural Mesh Component"));
 	ProceduralMeshComponent->SetCollisionProfileName("BlockAll");
@@ -61,98 +40,38 @@ void ALevelGenerator::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	if(bGenerateNoisePlaneOnConstruction)
+	if(bGenerateOnConstruction)
 	{
-		InitLevelGenerator();
+		GenerateMesh();
 	}
 }
 
-void ALevelGenerator::GenerateMap()
+void ALevelGenerator::GenerateLevel() const
 {
-	InitLevelGenerator();
+	const FDateTime StartTime = FDateTime::UtcNow();
+	
+	GenerateMesh();
+	
+	const float TimeElapsedInMs = (FDateTime::UtcNow() - StartTime).GetTotalMilliseconds();
+	const float TimeElapsedInS = (FDateTime::UtcNow() - StartTime).GetTotalSeconds();
+	UE_LOG(LogTemp, Error, TEXT("generateMesh LG - Excecution time = %f MilliSeconds = %f Seconds."), TimeElapsedInMs, TimeElapsedInS);
 }
 
-void ALevelGenerator::InitLevelGenerator()
-{
-	if(bShowNoisePlane)
-	{
-		GenerateTextureOnNoisePlane();
-	}
-	if(bShowMapPlane)
-	{
-		GenerateTextureOnMapPlane();
-	}
-}
-
-void ALevelGenerator::GenerateTextureOnNoisePlane()
+void ALevelGenerator::GenerateMesh() const
 {
 	if(!GridData)
 	{
 		return;
 	}
-	
-	NoiseTextureComponent->ReInitialize(GridData->GetRows(), GridData->GetColumns(), FLinearColor::White, GridData->GetNoiseColors());
-	NoiseTextureComponent->UpdateTexture();
-	const TObjectPtr<UTexture2D> NoiseTexture = NoiseTextureComponent->GetTextureResource();
-	
-	// Assign texture to the material
-	UMaterialInstanceDynamic* DynamicMaterial = NoisePlane->CreateDynamicMaterialInstance(0, NoisePlane->GetMaterial(0));
-	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
-	NoisePlane->SetMaterial(0, DynamicMaterial);
-}
 
-void ALevelGenerator::GenerateTextureOnMapPlane()
-{
-	if(!GridData)
+	int32 SectionIndex= 0;
+	for(const auto& Section : GridData->GenerateMeshSectionData())
 	{
-		return;
+		TObjectPtr<UMaterialInstance> CurrentMaterial = GridData->GetLevelRegions()[SectionIndex].RegionMaterial;
+	
+		ProceduralMeshComponent->CreateMeshSection_LinearColor(SectionIndex, Section.Vertices, Section.Triangles, Section.Normals, Section.Uvs, EmptyVertexColors, Section.Tangents, true);
+		ProceduralMeshComponent->SetMaterial(SectionIndex, CurrentMaterial);
+	
+		SectionIndex++;
 	}
-	
-	MapTextureComponent->ReInitialize(GridData->GetRows(), GridData->GetColumns(), FLinearColor::White, GridData->GetMapColors());
-	MapTextureComponent->UpdateTexture();
-	const TObjectPtr<UTexture2D> NoiseTexture = MapTextureComponent->GetTextureResource();
-	
-	// Assign texture to the material
-	UMaterialInstanceDynamic* DynamicMaterial = MapPlane->CreateDynamicMaterialInstance(0, MapPlane->GetMaterial(0));
-	DynamicMaterial->SetTextureParameterValue("Texture", NoiseTexture);
-	MapPlane->SetMaterial(0, DynamicMaterial);
-
-	// if(bShowMesh)
-	// {
-	// 	ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->GetVertices(), GridData->GetTriangles(), GridData->GetNormals(), GridData->GetUvs(), EmptyVertexColors, GridData->GetTangents(), true);
-	// 	ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
-	// }
-
-	if(bShowMesh)
-	{
-		int32 SectionIndex= 0;
-		for(const auto& Section : GridData->GetMeshSectionsData())
-		{
-			TArray<FVector> SectionNormals;
-			TArray<struct FProcMeshTangent> SectionTangents;
-			
-			TObjectPtr<UMaterialInstance> CurrentMaterial = GridData->GetLevelRegions()[SectionIndex].RegionMaterial;
-			
-			Section.CalculateSectionNormalsAndTangents(SectionNormals, SectionTangents);
-	
-			ProceduralMeshComponent->CreateMeshSection_LinearColor(SectionIndex, Section.Vertices, Section.Triangles, SectionNormals, Section.Uvs, EmptyVertexColors, SectionTangents, true);
-			ProceduralMeshComponent->SetMaterial(SectionIndex, CurrentMaterial);
-	
-			SectionIndex++;
-		}
-	}
-}
-
-void ALevelGenerator::GenerateMesh()
-{
-	// if(!GridData)
-	// {
-	// 	return;
-	// }
-	//
-	// if(bShowMesh)
-	// {
-	// 	ProceduralMeshComponent->CreateMeshSection_LinearColor(0, GridData->GetVertices(), GridData->GetTriangles(), GridData->GetNormals(), GridData->GetUvs(), GridData->GetVertexColors(), GridData->GetTangents(), true);
-	// 	ProceduralMeshComponent->SetMaterial(0, DynamicMaterial);
-	// }
 }

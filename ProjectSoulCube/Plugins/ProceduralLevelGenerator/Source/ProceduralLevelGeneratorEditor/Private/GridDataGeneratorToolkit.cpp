@@ -202,19 +202,9 @@ TArray<uint8> FGridDataGeneratorToolkit::GetNoiseColorsRaw() const
 	return GridDataGenerator->GetNoiseColorsRaw();
 }
 
-TArray<FLinearColorArray> FGridDataGeneratorToolkit::GetNoiseColors() const
-{
-	return GridDataGenerator->GetNoiseColors();
-}
-
 TArray<uint8> FGridDataGeneratorToolkit::GetMapColorsRaw() const
 {
 	return GridDataGenerator->GetMapColorsRaw();
-}
-
-TArray<FLinearColorArray> FGridDataGeneratorToolkit::GetMapColors() const
-{
-	return GridDataGenerator->GetMapColors();
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -20,6 +20,16 @@ int32 SMapTextureViewport::OnPaint(const FPaintArgs& Args, const FGeometry& Allo
 	const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId,
 	const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
 {
+	if(!TextureBrush)
+	{
+		return LayerId;
+	}
+	
+	if(ColorsRaw.Get().IsEmpty() || !ColorsRaw.IsSet())
+	{
+		return LayerId;
+	}
+	
 	if(ColorsRaw.Get().Num() < 1 || Width.Get() < 1 || Height.Get() < 1)
 	{
 		return LayerId;
@@ -35,11 +45,11 @@ int32 SMapTextureViewport::OnPaint(const FPaintArgs& Args, const FGeometry& Allo
 	DynamicTexture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap;
 	DynamicTexture->SRGB = true;
 	DynamicTexture->UpdateResource();
-
+	
 	TextureBrush->SetResourceObject(DynamicTexture);
 	TextureBrush->SetImageSize(FVector2D(DynamicTexture->GetSizeX(), DynamicTexture->GetSizeY()));
 	
-	FVector2D LocalSize = FVector2D(400.0f, 400.0f);
+	const FVector2D LocalSize = FVector2D(400.0f, 400.0f);
 
 	const FSlateLayoutTransform LayoutTransform(1.0f, FVector2D(30.0f, 30.0f));
 	

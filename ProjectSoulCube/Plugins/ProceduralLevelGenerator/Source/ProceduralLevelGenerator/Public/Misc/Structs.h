@@ -279,6 +279,17 @@ struct FTerrainType
 	TObjectPtr<UMaterialInstance> RegionMaterial;
 	
 	FTerrainType() = default;
+
+	
+	bool operator<(const FTerrainType& Other) const
+	{
+		return MaxHeight < Other.MaxHeight;
+	}
+
+	bool operator>(const FTerrainType& Other) const
+	{
+		return MaxHeight > Other.MaxHeight;
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -461,11 +472,11 @@ struct FLevelSection
 	UPROPERTY()
 	TArray<int32> Triangles;
 
-	// UPROPERTY()
-	// TArray<FVector> Normals;
-	//
-	// UPROPERTY()
-	// TArray<struct FProcMeshTangent> Tangents;
+	UPROPERTY()
+	TArray<FVector> Normals;
+	
+	UPROPERTY()
+	TArray<struct FProcMeshTangent> Tangents;
 
 	FLevelSection() = default;
 	
@@ -481,8 +492,8 @@ struct FLevelSection
 		Vertices.Empty();
 		Uvs.Empty();
 		Triangles.Empty();
-		// Normals.Empty();
-		// Tangents.Empty();
+		Normals.Empty();
+		Tangents.Empty();
 	}
 
 	void AddUninitialized_Internal()
@@ -496,11 +507,11 @@ struct FLevelSection
 		Triangles.Reserve(Size);
 		Triangles.AddUninitialized(Size);
 
-		// Normals.Reserve(Size);
-		// Normals.AddUninitialized(Size);
-		//
-		// Tangents.Reserve(Size);
-		// Tangents.AddUninitialized(Size);
+		Normals.Reserve(Size);
+		Normals.AddUninitialized(Size);
+		
+		Tangents.Reserve(Size);
+		Tangents.AddUninitialized(Size);
 	}
 
 	void CreateQuad(const TArray<FFloatArray>& NoiseDataNormalized, const int32& X, const int32& Y, const float& TopLeftX, const float& TopLeftY, const int32& Rows, const int32& Columns)
@@ -530,18 +541,18 @@ struct FLevelSection
 		Triangles[TriangleIndex++] = TopRightIndex_A;
 		Triangles[TriangleIndex++] = TopLeftIndex_A;
 
-		// // Calculate triangle edge vectors and normal
-		// const FVector Edge21 = Vertices[TopRightIndex_A] - Vertices[TopLeftIndex_A];
-		// const FVector Edge20 = Vertices[BottomLeftIndex_A] - Vertices[TopLeftIndex_A];
-		// const FVector Normal_A = (Edge21 ^ Edge20).GetSafeNormal();
-		//
-		// // If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
-		// Normals[BottomLeftIndex_A] = Normals[TopRightIndex_A] = Normals[TopLeftIndex_A] = Normal_A;
-		//
-		// // Tangents (perpendicular to the surface)
-		// const FVector SurfaceTangent_A = (Vertices[BottomLeftIndex_A] + Vertices[TopRightIndex_A] + Vertices[TopLeftIndex_A] / 3).GetSafeNormal();
-		// const FProcMeshTangent Tangent_A = FProcMeshTangent(SurfaceTangent_A, false);
-		// Tangents[BottomLeftIndex_A] = Tangents[TopRightIndex_A] = Tangents[TopLeftIndex_A] = Tangent_A;
+		// Calculate triangle edge vectors and normal
+		const FVector Edge21 = Vertices[TopRightIndex_A] - Vertices[TopLeftIndex_A];
+		const FVector Edge20 = Vertices[BottomLeftIndex_A] - Vertices[TopLeftIndex_A];
+		const FVector Normal_A = (Edge21 ^ Edge20).GetSafeNormal();
+		
+		// If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
+		Normals[BottomLeftIndex_A] = Normals[TopRightIndex_A] = Normals[TopLeftIndex_A] = Normal_A;
+		
+		// Tangents (perpendicular to the surface)
+		const FVector SurfaceTangent_A = (Vertices[BottomLeftIndex_A] + Vertices[TopRightIndex_A] + Vertices[TopLeftIndex_A] / 3).GetSafeNormal();
+		const FProcMeshTangent Tangent_A = FProcMeshTangent(SurfaceTangent_A, false);
+		Tangents[BottomLeftIndex_A] = Tangents[TopRightIndex_A] = Tangents[TopLeftIndex_A] = Tangent_A;
 		
 		
 		// Triangle B
@@ -562,19 +573,19 @@ struct FLevelSection
 		Triangles[TriangleIndex++] = BottomRightIndex_B;
 		Triangles[TriangleIndex++] = TopRightIndex_B;
 
-		// // Calculate triangle edge vectors and normal
-		// const FVector Edge43 = Vertices[BottomLeftIndex_B] - Vertices[BottomRightIndex_B];
-		// const FVector Edge45 = Vertices[TopRightIndex_B] - Vertices[BottomRightIndex_B];
-		// const FVector NormalCurrent_B = (Edge43 ^ Edge45).GetSafeNormal();
-		//
-		// // If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
-		// Normals[BottomLeftIndex_B] = Normals[BottomRightIndex_B] = Normals[TopRightIndex_B] = NormalCurrent_B;
-		//
-		//
-		// // Tangents (perpendicular to the surface)
-		// const FVector SurfaceTangent_B = (Vertices[BottomLeftIndex_B] + Vertices[BottomRightIndex_B] + Vertices[TopRightIndex_B] / 3).GetSafeNormal();
-		// const FProcMeshTangent Tangent_B = FProcMeshTangent(SurfaceTangent_B, false);
-		// Tangents[BottomLeftIndex_B] = Tangents[BottomRightIndex_B] = Tangents[TopRightIndex_B] = Tangent_B;
+		// Calculate triangle edge vectors and normal
+		const FVector Edge43 = Vertices[BottomLeftIndex_B] - Vertices[BottomRightIndex_B];
+		const FVector Edge45 = Vertices[TopRightIndex_B] - Vertices[BottomRightIndex_B];
+		const FVector NormalCurrent_B = (Edge43 ^ Edge45).GetSafeNormal();
+		
+		// If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
+		Normals[BottomLeftIndex_B] = Normals[BottomRightIndex_B] = Normals[TopRightIndex_B] = NormalCurrent_B;
+		
+		
+		// Tangents (perpendicular to the surface)
+		const FVector SurfaceTangent_B = (Vertices[BottomLeftIndex_B] + Vertices[BottomRightIndex_B] + Vertices[TopRightIndex_B] / 3).GetSafeNormal();
+		const FProcMeshTangent Tangent_B = FProcMeshTangent(SurfaceTangent_B, false);
+		Tangents[BottomLeftIndex_B] = Tangents[BottomRightIndex_B] = Tangents[TopRightIndex_B] = Tangent_B;
 	}
 
 

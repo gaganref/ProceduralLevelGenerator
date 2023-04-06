@@ -18,13 +18,6 @@ UCLASS(BlueprintType)
 class PROCEDURALLEVELGENERATOR_API UGridDataGenerator : public UObject
 {
 	GENERATED_BODY()
-
-private:
-	// UPROPERTY()
-	// TArray<FFloatArray> NoiseData;
-	//
-	// UPROPERTY()
-	// TArray<FFloatArray> NoiseDataNormalized;
 	
 protected:
 
@@ -33,33 +26,33 @@ protected:
 	int32 Seed = 252;
 	
 	// Total no of rows(→) or total no of cells(■) in each row(→) in the grid.
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 235))
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 235, Delta = 5))
 	int32 Rows = 100;
 
 	// Total no of columns(↑) or total no of cells(■) in each column(↑) in the grid.
-	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 235))
+	UPROPERTY(Category = "Grid Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 235, Delta = 5))
 	int32 Columns = 100;
 	
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.00001f))
-	float Scale = 45.0f;
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0.00001f, Delta = 1))
+	float Scale = 30.0f;
 
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0))
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 10, Delta = 1))
 	int32 Octaves = 5;
 
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1))
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.01))
 	float Persistence = 0.5f;
 
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 10, Delta = 0.01))
 	float Lacunarity = 2.0f;
 
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (AllowPreserveRatio, Delta = 1))
 	FVector2D Offset;
 
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (TitleProperty="TerrainName"))
 	TArray<FTerrainType> LevelRegions;
 	
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1))
-	float MeshHeightMultiplier = 36.0f;
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 100, Delta = 0.5, SliderExponent = 1))
+	float MeshHeightMultiplier = 30.0f;
 	
 	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UCurveFloat> HeightMultiplierCurve;
@@ -68,57 +61,21 @@ protected:
 	
 	UPROPERTY()
 	TArray<uint8> NoiseColorsRaw;
-	
-	UPROPERTY()
-	TArray<FLinearColorArray> NoiseColors;
 
 	UPROPERTY()
 	TArray<uint8> MapColorsRaw;
-	
-	UPROPERTY()
-	TArray<FLinearColorArray> MapColors;
 
 	UPROPERTY()
 	TArray<FCell> Cells;
 
 	UPROPERTY()
 	TArray<uint32> SectionCellCount;
-	
-	UPROPERTY()
-	TArray<FVector> Vertices;
-
-	UPROPERTY()
-	TArray<FVector2D> Uvs;
-
-	UPROPERTY()
-	TArray<int32> Triangles;
-
-	UPROPERTY()
-	TArray<FVector> Normals;
-
-	UPROPERTY()
-	TArray<struct FProcMeshTangent> Tangents;
-
-	UPROPERTY()
-	TArray<struct FLevelSection> MeshSectionsData;
 
 protected:
-
-	virtual void GenerateGridData(const bool bCanGenerateMeshData);
 	
 	virtual void InitGridColorData();
 	
-	virtual void ClearGridColorData();
-
-	virtual void InitGridMeshData();
-	
-	virtual void ClearGridMeshData();
-	
 	virtual void GenerateGridColorData();
-	
-	virtual void GenerateGridMeshData();	// Flat shading with tris
-
-	virtual void GenerateGridMeshSectionsData();	// Flat shading with tris
 		
 #if WITH_EDITOR
 	
@@ -129,6 +86,13 @@ protected:
 	
 #endif
 
+public:
+
+	TArray<struct FLevelSection> GenerateMeshSectionData();
+
+	UFUNCTION(Category = "Level Data", CallInEditor)
+	void SortLevelRegions();
+	
 public:
 
 	// Getters
@@ -154,25 +118,6 @@ public:
 	FORCEINLINE float GetMeshHeightMultiplier() const {return MeshHeightMultiplier;}
 
 	FORCEINLINE const TArray<uint8>& GetNoiseColorsRaw() const {return NoiseColorsRaw;}
-	
-	FORCEINLINE const TArray<FLinearColorArray>& GetNoiseColors() const {return NoiseColors;}
 
 	FORCEINLINE const TArray<uint8>& GetMapColorsRaw() const {return MapColorsRaw;}
-	
-	FORCEINLINE const TArray<FLinearColorArray>& GetMapColors() const {return MapColors;}
-
-	FORCEINLINE const TArray<FVector>& GetVertices() const {return Vertices;}
-
-	FORCEINLINE const TArray<FVector2D>& GetUvs() const {return Uvs;}
-
-	FORCEINLINE const TArray<int32>& GetTriangles() const {return Triangles;}
-
-	FORCEINLINE const TArray<FVector>& GetNormals() const {return Normals;}
-
-	FORCEINLINE const TArray<struct FLevelSection>& GetMeshSectionsData() const {return MeshSectionsData;}
-	
-	FORCEINLINE const TArray<FProcMeshTangent>& GetTangents() const {return Tangents;}
-	
-	UFUNCTION(CallInEditor)
-	void GenerateData();
 };

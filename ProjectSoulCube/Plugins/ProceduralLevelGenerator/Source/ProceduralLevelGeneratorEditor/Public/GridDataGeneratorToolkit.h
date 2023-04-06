@@ -33,11 +33,7 @@ public:
 	
 	TArray<uint8> GetNoiseColorsRaw() const;
 	
-	TArray<FLinearColorArray> GetNoiseColors() const;
-	
 	TArray<uint8> GetMapColorsRaw() const;
-	
-	TArray<FLinearColorArray> GetMapColors() const;
 	
 private:
 	
