@@ -50,14 +50,20 @@ protected:
 
 	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (TitleProperty="TerrainName"))
 	TArray<FTerrainType> LevelRegions;
+
+	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1.0 , AllowPreserveRatio, Delta = 1))
+	FVector MeshScale = FVector(1.0f, 1.0f, 1.0f);
 	
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 100, Delta = 0.5, SliderExponent = 1))
+	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 100, Delta = 0.5, SliderExponent = 1))
 	float MeshHeightMultiplier = 30.0f;
 	
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UCurveFloat> HeightMultiplierCurve;
 	
 protected:
+
+	UPROPERTY()
+	TArray<FFloatArray> NoiseData;
 	
 	UPROPERTY()
 	TArray<uint8> NoiseColorsRaw;
@@ -88,7 +94,9 @@ protected:
 
 public:
 
-	TArray<struct FLevelSection> GenerateMeshSectionData();
+	TArray<struct FLevelSection> GenerateMeshSectionData(const FVector& ComponentLocation = FVector(0.0f, 0.0f, 0.0f));
+
+	TArray<FVector> GenerateValidObjectLocations();
 
 	UFUNCTION(Category = "Level Data", CallInEditor)
 	void SortLevelRegions();

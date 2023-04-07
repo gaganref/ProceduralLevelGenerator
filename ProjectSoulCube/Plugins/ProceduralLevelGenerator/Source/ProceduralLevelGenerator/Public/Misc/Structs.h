@@ -514,27 +514,31 @@ struct FLevelSection
 		Tangents.AddUninitialized(Size);
 	}
 
-	void CreateQuad(const TArray<FFloatArray>& NoiseDataNormalized, const int32& X, const int32& Y, const float& TopLeftX, const float& TopLeftY, const int32& Rows, const int32& Columns)
+	void CreateQuad(const TArray<FFloatArray>& NoiseDataNormalized, const int32& InX, const int32& InY, const float& InBottomLeftX, const float& InBottomLeftY, const int32& Rows, const int32& Columns, FVector QuadScale)
 	{
+		// To Avoid 
+		QuadScale.X = (QuadScale.X < 1) ? 1.0f : QuadScale.X;
+		QuadScale.Y = (QuadScale.Y < 1) ? 1.0f : QuadScale.Y;
+		QuadScale.Z = (QuadScale.Z < 1) ? 1.0f : QuadScale.Z;
+		
 		// Noise Heights for quad vertex points
-			
-		const float BottomLeftNoiseHeight = NoiseDataNormalized[X][Y];
-		const float BottomRightNoiseHeight = NoiseDataNormalized[X][Y+1];
-		const float TopRightIndexNoiseHeight = NoiseDataNormalized[X+1][Y+1];
-		const float TopLeftIndexNoiseHeight = NoiseDataNormalized[X+1][Y];
+		const float BottomLeftNoiseHeight = NoiseDataNormalized[InX][InY];
+		const float BottomRightNoiseHeight = NoiseDataNormalized[InX][InY+1];
+		const float TopRightIndexNoiseHeight = NoiseDataNormalized[InX+1][InY+1];
+		const float TopLeftIndexNoiseHeight = NoiseDataNormalized[InX+1][InY];
 		
 		// Triangle A
 		const int32 BottomLeftIndex_A = VertexIndex++;
 		const int32 TopRightIndex_A = VertexIndex++;
 		const int32 TopLeftIndex_A = VertexIndex++;
 
-		Vertices[BottomLeftIndex_A] = FVector(TopLeftX + X, TopLeftY + Y, BottomLeftNoiseHeight);
-		Vertices[TopRightIndex_A] = FVector(TopLeftX + X + 1, TopLeftY + Y + 1, TopRightIndexNoiseHeight);
-		Vertices[TopLeftIndex_A] = FVector(TopLeftX + X + 1, TopLeftY + Y, TopLeftIndexNoiseHeight);
+		Vertices[BottomLeftIndex_A] = FVector(InBottomLeftX + InX, InBottomLeftY + InY, BottomLeftNoiseHeight) * QuadScale;
+		Vertices[TopRightIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightIndexNoiseHeight) * QuadScale;
+		Vertices[TopLeftIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY, TopLeftIndexNoiseHeight) * QuadScale;
 
-		Uvs[BottomLeftIndex_A] = FVector2D(X/static_cast<float>(Rows), Y/static_cast<float>(Columns));
-		Uvs[TopRightIndex_A] = FVector2D((X+1)/static_cast<float>(Rows), (Y+1)/static_cast<float>(Columns));
-		Uvs[TopLeftIndex_A] = FVector2D((X+1)/static_cast<float>(Rows), Y/static_cast<float>(Columns));
+		Uvs[BottomLeftIndex_A] = FVector2D(InX/static_cast<float>(Rows), InY/static_cast<float>(Columns));
+		Uvs[TopRightIndex_A] = FVector2D((InX+1)/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
+		Uvs[TopLeftIndex_A] = FVector2D((InX+1)/static_cast<float>(Rows), InY/static_cast<float>(Columns));
 
 		// The order of these (clockwise/counter-clockwise) dictates which way the normal will face.
 		Triangles[TriangleIndex++] = BottomLeftIndex_A;
@@ -560,13 +564,13 @@ struct FLevelSection
 		const int32 BottomRightIndex_B = VertexIndex++;
 		const int32 TopRightIndex_B = VertexIndex++;
 
-		Vertices[BottomLeftIndex_B] = FVector(TopLeftX + X, TopLeftY + Y, BottomLeftNoiseHeight);
-		Vertices[BottomRightIndex_B] = FVector(TopLeftX + X, TopLeftY + Y + 1, BottomRightNoiseHeight);
-		Vertices[TopRightIndex_B] = FVector(TopLeftX + X + 1, TopLeftY + Y + 1, TopRightIndexNoiseHeight);
+		Vertices[BottomLeftIndex_B] = FVector(InBottomLeftX + InX, InBottomLeftY + InY, BottomLeftNoiseHeight) * QuadScale;
+		Vertices[BottomRightIndex_B] = FVector(InBottomLeftX + InX, InBottomLeftY + InY + 1, BottomRightNoiseHeight) * QuadScale;
+		Vertices[TopRightIndex_B] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightIndexNoiseHeight) * QuadScale;
 
-		Uvs[BottomLeftIndex_B] = FVector2D(X/static_cast<float>(Rows), Y/static_cast<float>(Columns));
-		Uvs[BottomRightIndex_B] = FVector2D(X/static_cast<float>(Rows), (Y+1)/static_cast<float>(Columns));
-		Uvs[TopRightIndex_B] = FVector2D((X+1)/static_cast<float>(Rows), (Y+1)/static_cast<float>(Columns));
+		Uvs[BottomLeftIndex_B] = FVector2D(InX/static_cast<float>(Rows), InY/static_cast<float>(Columns));
+		Uvs[BottomRightIndex_B] = FVector2D(InX/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
+		Uvs[TopRightIndex_B] = FVector2D((InX+1)/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
 
 		// The order of these (clockwise/counter-clockwise) dictates which way the normal will face.
 		Triangles[TriangleIndex++] = BottomLeftIndex_B;
@@ -587,59 +591,4 @@ struct FLevelSection
 		const FProcMeshTangent Tangent_B = FProcMeshTangent(SurfaceTangent_B, false);
 		Tangents[BottomLeftIndex_B] = Tangents[BottomRightIndex_B] = Tangents[TopRightIndex_B] = Tangent_B;
 	}
-
-
-	void CalculateSectionNormalsAndTangents(TArray<FVector>& OutNormals, TArray<struct FProcMeshTangent>& OutTangents) const
-	{
-		OutNormals.Empty();
-		OutTangents.Empty();
-
-		OutNormals.Reserve(Size);
-		OutNormals.AddUninitialized(Size);
-
-		OutTangents.Reserve(Size);
-		OutTangents.AddUninitialized(Size);
-
-		int32 Itr = 0;
-
-		while(Itr < Size)
-		{
-			// Triangle A
-			const int32 BottomLeftIndex_A = Itr++;
-			const int32 TopRightIndex_A = Itr++;
-			const int32 TopLeftIndex_A = Itr++;
-
-			// Calculate triangle edge vectors and normal
-			const FVector Edge21 = Vertices[TopRightIndex_A] - Vertices[TopLeftIndex_A];
-			const FVector Edge20 = Vertices[BottomLeftIndex_A] - Vertices[TopLeftIndex_A];
-			const FVector Normal_A = (Edge21 ^ Edge20).GetSafeNormal();
-			
-			// If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
-			OutNormals[BottomLeftIndex_A] = OutNormals[TopRightIndex_A] = OutNormals[TopLeftIndex_A] = Normal_A;
-			
-			// Tangents (perpendicular to the surface)
-			const FVector SurfaceTangent_A = (Vertices[BottomLeftIndex_A] + Vertices[TopRightIndex_A] + Vertices[TopLeftIndex_A] / 3).GetSafeNormal();
-			const FProcMeshTangent Tangent_A = FProcMeshTangent(SurfaceTangent_A, false);
-			OutTangents[BottomLeftIndex_A] = OutTangents[TopRightIndex_A] = OutTangents[TopLeftIndex_A] = Tangent_A;
-			
-			// Triangle B
-			const int32 BottomLeftIndex_B = Itr++;
-			const int32 BottomRightIndex_B = Itr++;
-			const int32 TopRightIndex_B = Itr++;
-			
-			// Calculate triangle edge vectors and normal
-			const FVector Edge43 = Vertices[BottomLeftIndex_B] - Vertices[BottomRightIndex_B];
-			const FVector Edge45 = Vertices[TopRightIndex_B] - Vertices[BottomRightIndex_B];
-			const FVector NormalCurrent_B = (Edge43 ^ Edge45).GetSafeNormal();
-		
-			// If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
-			OutNormals[BottomLeftIndex_B] = OutNormals[BottomRightIndex_B] = OutNormals[TopRightIndex_B] = NormalCurrent_B;
-			
-			// Tangents (perpendicular to the surface)
-			const FVector SurfaceTangent_B = (Vertices[BottomLeftIndex_B] + Vertices[BottomRightIndex_B] + Vertices[TopRightIndex_B] / 3).GetSafeNormal();
-			const FProcMeshTangent Tangent_B = FProcMeshTangent(SurfaceTangent_B, false);
-			OutTangents[BottomLeftIndex_B] = OutTangents[BottomRightIndex_B] = OutTangents[TopRightIndex_B] = Tangent_B;
-		}
-	}
-	
 };

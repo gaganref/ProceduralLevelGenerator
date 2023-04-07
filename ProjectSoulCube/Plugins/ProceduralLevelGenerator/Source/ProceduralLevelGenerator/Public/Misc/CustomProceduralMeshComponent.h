@@ -14,10 +14,24 @@ class PROCEDURALLEVELGENERATOR_API UCustomProceduralMeshComponent : public UProc
 {
 	GENERATED_BODY()
 
+protected:
+
+	FVector Scale = FVector(1.0f, 1.0f, 1.0f);
+
 public:
 
 	UCustomProceduralMeshComponent() = default;
 	
 	// Sets default values for this component's properties
-	UCustomProceduralMeshComponent(const FObjectInitializer& ObjectInitializer);
+	explicit UCustomProceduralMeshComponent(const FObjectInitializer& ObjectInitializer);
+
+	virtual void OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport) override;
+
+protected:
+
+#if WITH_EDITOR
+
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	
+#endif
 };

@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "LevelGenerator.generated.h"
 
+class UFixedScaleSceneComponent;
 class UGridDataGenerator;
 class UCustomProceduralMeshComponent;
 
@@ -18,7 +19,7 @@ private:
 
 	/** Default root scene component. */
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USceneComponent> SceneComponent;
+	TObjectPtr<UFixedScaleSceneComponent> SceneComponent;
 
 	UPROPERTY(Category = "ActorComponent", VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCustomProceduralMeshComponent> ProceduralMeshComponent;
@@ -37,11 +38,10 @@ private:
 	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UGridDataGenerator> GridData;
 	
-public:	
+public:
+	
 	// Sets default values for this actor's properties
-	ALevelGenerator() = default;
-
-	ALevelGenerator(const FObjectInitializer& ObjectInitializer);
+	ALevelGenerator();
 	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

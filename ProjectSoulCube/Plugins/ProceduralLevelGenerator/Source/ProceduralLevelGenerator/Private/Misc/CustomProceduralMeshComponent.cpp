@@ -15,4 +15,32 @@ UCustomProceduralMeshComponent::UCustomProceduralMeshComponent(const FObjectInit
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	// ...
+
+	SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
+	UProceduralMeshComponent::SetCollisionProfileName("BlockAll");
+}
+
+void UCustomProceduralMeshComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags,
+	ETeleportType Teleport)
+{
+	Super::OnUpdateTransform(UpdateTransformFlags, Teleport);
+
+	UE_LOG(LogTemp, Warning, TEXT("Works"));
+	if(Scale != GetRelativeScale3D())
+	{
+		SetRelativeScale3D(Scale);
+	}
+}
+
+void UCustomProceduralMeshComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	const static FName ScaleName("RelativeScale3D");
+	const FName PropertyName = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : FName();
+
+	if(PropertyName == ScaleName)
+	{
+		SetRelativeScale3D(Scale);
+	}
+	
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 }

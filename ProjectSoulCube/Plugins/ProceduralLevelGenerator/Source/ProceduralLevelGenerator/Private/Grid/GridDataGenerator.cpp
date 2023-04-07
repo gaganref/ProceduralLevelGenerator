@@ -68,7 +68,7 @@ void UGridDataGenerator::GenerateGridColorData()
 {
 	InitGridColorData();
 
-	const TArray<FFloatArray>& NoiseData = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
+	NoiseData = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
 	
 	int32 Itr = 0;
 	
@@ -112,35 +112,56 @@ void UGridDataGenerator::GenerateGridColorData()
 	
 }
 
-TArray<FLevelSection> UGridDataGenerator::GenerateMeshSectionData()
+TArray<FLevelSection> UGridDataGenerator::GenerateMeshSectionData(const FVector& ComponentLocation /**= FVector(0.0f, 0.0f, 0.0f)*/)
 {
 	GenerateGridColorData();	// To make Sure that the data is  up to date
 	
 	TArray<FLevelSection> OutMeshSectionsData;
 	OutMeshSectionsData.Reserve(LevelRegions.Num());
 
-	const TArray<FFloatArray>& NoiseData = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
-	const TArray<FFloatArray>&  NoiseDataNormalized = UNoise::NormalizeNoiseMap(NoiseData, HeightMultiplierCurve, MeshHeightMultiplier);
+	const TArray<FFloatArray>&  NoiseDataNormalized = UNoise::NormalizeNoiseMap(NoiseData, HeightMultiplierCurve, MeshHeightMultiplier, -0.5f, 1.0f);
 
 	for(int32 Itr = 0; Itr < LevelRegions.Num(); Itr++)
 	{
 		OutMeshSectionsData.Add(FLevelSection(SectionCellCount[Itr]));
 	}
-	
-	const float TopLeftX = (Rows - 1) / -2.0f;
-	const float TopLeftY = (Columns - 1) / -2.0f;
+
+	// This is the Grid based BottomLeft XY values that are unscaled as we will be scaling them in CreateQuad
+	const float BottomLeftX = (Rows - 1) / -2.0f;
+	const float BottomLeftY = (Columns - 1) / -2.0f;
 	
 	for(int X=0; X < Rows; ++X)
 	{
 		for(int Y=0; Y < Columns; ++Y)
 		{
-
 			const int32 CurrentCellIndex = Rows * Y + X;
 			const int32 CurrentRegionIndex = Cells[CurrentCellIndex].RegionIndex;
 
-			OutMeshSectionsData[CurrentRegionIndex].CreateQuad(NoiseDataNormalized, X, Y, TopLeftX, TopLeftY, Rows, Columns);
+			OutMeshSectionsData[CurrentRegionIndex].CreateQuad(NoiseDataNormalized, X, Y, BottomLeftX, BottomLeftY, Rows, Columns, MeshScale);
 		}
 	}
 
 	return OutMeshSectionsData;
+}
+
+TArray<FVector> UGridDataGenerator::GenerateValidObjectLocations()
+{
+	TArray<FVector> OutArray;
+	
+	GenerateGridColorData();	// To make Sure that the data is  up to date
+
+	const TArray<FFloatArray>& NoiseDataNormalized = UNoise::NormalizeNoiseMap(NoiseData, HeightMultiplierCurve, MeshHeightMultiplier);
+
+	const float BottomLeftX = (Rows - 1) / -2.0f;
+	const float BottomLeftY = (Columns - 1) / -2.0f;
+	
+	// for(int X=0; X < Rows; ++X)
+	// {
+	// 	for(int Y=0; Y < Columns; ++Y)
+	// 	{
+	// 		
+	// 	}
+	// }
+
+	return OutArray;
 }

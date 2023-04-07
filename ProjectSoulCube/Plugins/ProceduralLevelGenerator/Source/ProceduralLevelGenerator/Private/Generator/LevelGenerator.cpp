@@ -3,6 +3,7 @@
 
 #include "Generator/LevelGenerator.h"
 
+#include "Components/FixedScaleSceneComponent.h"
 #include "Grid/GridDataGenerator.h"
 #include "Misc/CustomProceduralMeshComponent.h"
 #include "Misc/Structs.h"
@@ -10,16 +11,21 @@
 static const TArray<FLinearColor> EmptyVertexColors;
 
 // Sets default values
-ALevelGenerator::ALevelGenerator(const FObjectInitializer& ObjectInitializer)
+ALevelGenerator::ALevelGenerator()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
+	SceneComponent = CreateDefaultSubobject<UFixedScaleSceneComponent>(TEXT("SceneComponent"));
 	RootComponent = SceneComponent;
 
 	ProceduralMeshComponent = CreateDefaultSubobject<UCustomProceduralMeshComponent>(TEXT("Procedural Mesh Component"));
-	ProceduralMeshComponent->SetCollisionProfileName("BlockAll");
+	ProceduralMeshComponent->SetupAttachment(RootComponent);
+
+	// ProceduralMeshComponent->SetCollisionProfileName("BlockAll");
+
+	SetActorScale3D(FVector(1.0f, 1.0f, 1.0f));
+	
 }
 
 // Called when the game starts or when spawned
@@ -39,11 +45,13 @@ void ALevelGenerator::Tick(float DeltaTime)
 void ALevelGenerator::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-
+	SetActorScale3D(FVector(1.0f, 1.0f, 1.0f));
+	
 	if(bGenerateOnConstruction)
 	{
 		GenerateMesh();
 	}
+
 }
 
 void ALevelGenerator::GenerateLevel() const
