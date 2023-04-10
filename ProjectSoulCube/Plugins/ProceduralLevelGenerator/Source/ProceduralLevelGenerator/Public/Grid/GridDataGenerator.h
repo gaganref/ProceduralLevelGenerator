@@ -7,6 +7,7 @@
 #include "Misc/Structs.h"
 #include "GridDataGenerator.generated.h"
 
+class UQuadTree;
 struct FLinearColorArray;
 struct FTerrainType;
 class UCurveFloat;
@@ -18,6 +19,10 @@ UCLASS(BlueprintType)
 class PROCEDURALLEVELGENERATOR_API UGridDataGenerator : public UObject
 {
 	GENERATED_BODY()
+
+public:
+
+	UGridDataGenerator();
 	
 protected:
 
@@ -59,12 +64,10 @@ protected:
 	
 	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<UCurveFloat> HeightMultiplierCurve;
+
 	
 protected:
 
-	UPROPERTY()
-	TArray<FFloatArray> NoiseData;
-	
 	UPROPERTY()
 	TArray<uint8> NoiseColorsRaw;
 
@@ -72,10 +75,14 @@ protected:
 	TArray<uint8> MapColorsRaw;
 
 	UPROPERTY()
-	TArray<FCell> Cells;
+	TArray<uint8> RegionIndexMapping;
 
 	UPROPERTY()
 	TArray<uint32> SectionCellCount;
+
+	// to store if the is valid such that it is in a valid region or in a valid height.
+	UPROPERTY()
+	TArray<bool> IsValidCell;
 
 protected:
 	
@@ -94,10 +101,42 @@ protected:
 
 public:
 
-	TArray<struct FLevelSection> GenerateMeshSectionData(const FVector& ComponentLocation = FVector(0.0f, 0.0f, 0.0f));
+	TArray<struct FLevelSection> GenerateMeshSectionData();
 
-	TArray<FVector> GenerateValidObjectLocations();
+	/**
+	 *  GeneratePoisonDiskPoints inspired from From https://github.com/corporateshark/poisson-disk-generator/blob/master/PoissonGenerator.h
+	 */
 
+	// To generate points that are apart from each other a minimum distance.
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector2D> GeneratePoisonDiskPoints(int32 NoOfPoints, float MinimumDistance, int32 NoOfTries);
+
+	// To generate points that are apart from each other a minimum distance and evenly (using poison alg).
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector2D> GeneratePoisonDiskPointsEvenly(float MinimumDistance, int32 MaxPoints);
+
+	FVector2D GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance, const FRandomStream& RandomStream) const;
+	
+	FORCEINLINE int32 GetCellIndex(const int32& GridX, const int32& GridY) const;
+
+	FORCEINLINE int32 GetCellIndex(const FVector2D& GridXY) const;
+	
+	FORCEINLINE int32 GetCellIndexByLocation(const FVector& Location) const;
+
+	FORCEINLINE int32 GetCellIndexByLocation(const FVector2D& Location) const;
+
+	FORCEINLINE FVector2D GetCellIndex2DByLocation(const FVector2D& Location) const;
+
+	FORCEINLINE bool IsPointInGrid(const FVector2D& Point) const;
+
+	FORCEINLINE bool IsPointInCell(const FVector2D& Point, const FVector2D& CellPosition) const;
+
+	FORCEINLINE float GetGridWidth() const;
+	
+	FORCEINLINE float GetGridHeight() const;
+
+	bool IsPointInNeighbourhood(const FVector2D& Point, const float& MinimumDistance) const;
+	
 	UFUNCTION(Category = "Level Data", CallInEditor)
 	void SortLevelRegions();
 	

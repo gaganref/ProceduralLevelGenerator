@@ -84,6 +84,38 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 	return NoiseMap;
 }
 
+TArray<FFloatArray> UNoise::GenerateNoiseMapNormalized(const int& Seed, const int32& MapWidth, const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const
+											 FVector2D& Offset, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax)
+{
+	// To avoid zero division error
+	if(Scale <= 0){Scale = 0.0001f;}
+
+	const float MapHalfWidth = MapWidth/2.0f;
+	const float MapHalfHeight = MapHeight/2.0f;
+	
+	const TArray<FVector2D>& OctaveOffsets = CalculateOcataveOffsets(Seed, Octaves, Offset);
+	
+	
+	FFloatArray FillArray;
+	FillArray.Reserve(MapHeight);
+	FillArray.AddUninitialized(MapHeight);
+
+	TArray<FFloatArray> NoiseMap;
+	NoiseMap.Reserve(MapWidth);
+	NoiseMap.Init(FillArray, MapWidth);
+	
+	for(int X=0; X < MapWidth; ++X)	
+	{
+		for(int Y=0; Y < MapHeight; ++Y)
+		{
+			const float PerlinValue = CalculatePerlinValueAtPoint(MapHalfWidth, MapHalfHeight, X, Y, Scale, Octaves, Persistence, Lacunarity, OctaveOffsets); 
+			NoiseMap[X][Y] = FMath::Clamp(NormalizeCurve->GetFloatValue(PerlinValue), ClampMin, ClampMax) * MeshHeightMultiplier;
+		}
+	}
+
+	return NoiseMap;
+}
+
 TArray<FFloatArray> UNoise::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax)
 {
 	if(NoiseMap.Num() < 1)
@@ -93,7 +125,7 @@ TArray<FFloatArray> UNoise::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMa
 
 	const int32 Width = NoiseMap.Num();
 	const int32 Height = NoiseMap[0].Num();
-
+	
 	TArray<FFloatArray> OutNoiseMap = NoiseMap;
 
 	for (int Y = 0; Y < Height; ++Y)

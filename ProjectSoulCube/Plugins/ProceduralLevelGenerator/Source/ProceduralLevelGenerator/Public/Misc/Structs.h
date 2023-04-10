@@ -267,26 +267,29 @@ struct FTerrainType
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString TerrainName;
+	FName TerrainName = "Terrain Name";
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin=0.0f, ClampMax=1.0f))
-	float MaxHeight;
+	float MaxHeight = 0.0f;
+
+	// Only used if the corresponding point has a valid terrain height
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin=0, ClampMax=100))
+	uint8 ObjectSpawnProbability = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor LinearColor = FLinearColor::Black;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FLinearColor LinearColor;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UMaterialInstance> RegionMaterial;
+	TObjectPtr<UMaterialInstance> RegionMaterial = nullptr;
 	
 	FTerrainType() = default;
-
 	
-	bool operator<(const FTerrainType& Other) const
+	FORCEINLINE bool operator<(const FTerrainType& Other) const
 	{
 		return MaxHeight < Other.MaxHeight;
 	}
 
-	bool operator>(const FTerrainType& Other) const
+	FORCEINLINE bool operator>(const FTerrainType& Other) const
 	{
 		return MaxHeight > Other.MaxHeight;
 	}
