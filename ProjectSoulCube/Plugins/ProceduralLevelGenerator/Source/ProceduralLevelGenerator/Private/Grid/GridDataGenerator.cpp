@@ -159,8 +159,7 @@ TArray<FLevelSection> UGridDataGenerator::GenerateMeshSectionData()
 	{
 		for(int Y=0; Y < Columns; ++Y)
 		{
-			const int32 CurrentCellIndex = Rows * Y + X;
-			const int32 CurrentRegionIndex = RegionIndexMapping[CurrentCellIndex];
+			const int32 CurrentRegionIndex = RegionIndexMapping[GetCellIndex(X, Y)];
 			
 			OutMeshSectionsData[CurrentRegionIndex].CreateQuad(NoiseDataNormalized, X, Y, BottomLeftX, BottomLeftY, Rows, Columns, MeshScale);
 		}
@@ -376,7 +375,7 @@ FVector2D UGridDataGenerator::GenerateRandomPointAround(const FVector2D& Point, 
 
 FORCEINLINE int32 UGridDataGenerator::GetCellIndex(const int32& GridX, const int32& GridY) const
 {
-	return Rows * GridX + GridY; 
+	return Rows * GridY + GridX; 
 }
 
 FORCEINLINE int32 UGridDataGenerator::GetCellIndex(const FVector2D& GridXY) const

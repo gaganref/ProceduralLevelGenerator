@@ -32,10 +32,10 @@ private:
 private:
 	
 	// use this with caution
-	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (DisplayPriority = "-1", AllowPrivateAccess = "true"))
 	bool bGenerateOnConstruction = false;
 
-	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(Category = "Level Data", EditAnywhere, BlueprintReadOnly, meta = (DisplayPriority = "-1", AllowPrivateAccess = "true"))
 	TObjectPtr<UGridDataGenerator> GridData;
 	
 public:
