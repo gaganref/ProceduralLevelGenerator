@@ -4,34 +4,46 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "Noise.generated.h"
+#include "GeneratorHelpers.generated.h"
 
+class FDisjointSet;
 struct FFloatArray;
-
 /**
  * 
  */
-UCLASS(meta=(ScriptName="Noise"))
-class PROCEDURALLEVELGENERATOR_API UNoise : public UBlueprintFunctionLibrary
+UCLASS()
+class PROCEDURALLEVELGENERATOR_API UGeneratorHelpers : public UBlueprintFunctionLibrary
 {
-	GENERATED_UCLASS_BODY()
+	GENERATED_BODY()
+
+protected:
 	
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Calculate Octave Offsets", Keywords = "Octave Offsets"), Category = "Noise")
 	static TArray<FVector2D> CalculateOcataveOffsets(const int& Seed, const int32& Octaves, const FVector2D& Offset);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Calculate Perlin Value At Point", Keywords = "Perlin Noise Point"), Category = "Noise")
+	void FloodFill(FDisjointSet& OutDisjointSet);
+
+	FVector2D GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance, const FRandomStream& RandomStream) const;
+
+public:
+	
+	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static float CalculatePerlinValueAtPoint(const int32& MapHalfWidth, const int32& MapHalfHeight, const int32& PointX, const int32& PointY, float Scale,
 											const int32& Octaves, const float& Persistence, const float& Lacunarity, const TArray<FVector2D>& OctaveOffsets);
 	
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Noise Map", Keywords = "Perlin Noise Map Generate"), Category = "Noise")
+	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static TArray<FFloatArray> GenerateNoiseMap(const int& Seed, const int32& MapWidth, const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const
-	                                            FVector2D& Offset);
+												FVector2D& Offset);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Noise Map", Keywords = "Perlin Noise Map Generate"), Category = "Noise")
+	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static TArray<FFloatArray> GenerateNoiseMapNormalized(const int& Seed, const int32& MapWidth, const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const
 												FVector2D& Offset, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Normalize Noise Map", Keywords = "Perlin Noise Map Normalize"), Category = "Noise")
+	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static TArray<FFloatArray> NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin = 0.0f, const float& ClampMax = 1.0f);
 
+	UFUNCTION(BlueprintCallable, Category = "RandomPoints")
+	static TArray<FVector2D> GeneratePoisonPoints(int32 NoOfPoints, float MinimumDistance, int32 NoOfTries);
+
+	UFUNCTION(BlueprintCallable, Category = "RandomPoints")
+	static TArray<FVector2D> GeneratePoisonPointsAdvanced(int32 NoOfPoints, float MinimumDistance, int32 NoOfTries);
 };

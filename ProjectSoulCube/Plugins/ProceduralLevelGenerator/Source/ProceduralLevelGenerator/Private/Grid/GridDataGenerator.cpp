@@ -4,8 +4,8 @@
 #include "Grid/GridDataGenerator.h"
 
 #include "DisjointSet.h"
+#include "Generator/GeneratorHelpers.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Misc/Noise.h"
 #include "QuadTree/QuadTree.h"
 
 UGridDataGenerator::UGridDataGenerator()
@@ -133,37 +133,6 @@ void UGridDataGenerator::GenerateGridColorData()
 		}
 	}
 	
-}
-
-TArray<FLevelSection> UGridDataGenerator::GenerateMeshSectionData()
-{
-	GenerateGridColorData();	// To make Sure that the data is  up to date
-	
-	TArray<FLevelSection> OutMeshSectionsData;
-	OutMeshSectionsData.Reserve(LevelRegions.Num());
-
-	const TArray<FFloatArray>& NoiseDataNormalized = GetCurrentNoiseMapNormalized();
-	
-	for(int32 Itr = 0; Itr < LevelRegions.Num(); Itr++)
-	{
-		OutMeshSectionsData.Add(FLevelSection(RegionCellCount[Itr]));
-	}
-
-	// This is the Grid based BottomLeft XY values that are unscaled as we will be scaling them in CreateQuad
-	const float BottomLeftX = (Rows - 1) / -2.0f;
-	const float BottomLeftY = (Columns - 1) / -2.0f;
-	
-	for(int X=0; X < Rows; ++X)
-	{
-		for(int Y=0; Y < Columns; ++Y)
-		{
-			const int32 CurrentRegionIndex = RegionIndexMapping[GetCellIndex(X, Y)];
-			
-			OutMeshSectionsData[CurrentRegionIndex].CreateQuad(NoiseDataNormalized, X, Y, BottomLeftX, BottomLeftY, Rows, Columns, MeshScale);
-		}
-	}
-
-	return OutMeshSectionsData;
 }
 
 TArray<FVector2D> UGridDataGenerator::GeneratePoisonDiskPoints(int32 NoOfPoints, float MinimumDistance, int32 NoOfTries)
@@ -514,12 +483,12 @@ FORCEINLINE float UGridDataGenerator::GetGridHeight() const
 
 TArray<FFloatArray> UGridDataGenerator::GetCurrentNoiseMap() const
 {
-	return UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
+	return UGeneratorHelpers::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
 }
 
 TArray<FFloatArray> UGridDataGenerator::GetCurrentNoiseMapNormalized() const
 {
-	return UNoise::GenerateNoiseMapNormalized(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset, HeightMultiplierCurve, MeshHeightMultiplier, -0.5f, 1.0f);
+	return UGeneratorHelpers::GenerateNoiseMapNormalized(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset, HeightMultiplierCurve, MeshHeightMultiplier, -0.5f, 1.0f);
 }
 
 int32 UGridDataGenerator::GetRegionCellCount(const int32 SectionIndex) const
@@ -544,7 +513,7 @@ int32 UGridDataGenerator::GetRegionIndex(const int32 GridX, const int32 GridY) c
 	return -1;
 }
 
-void UGridDataGenerator::CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<uint32>& OutRegionCellCount)
+void UGridDataGenerator::CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<int32>& OutRegionCellCount)
 {
 	const int32 TotalCells = Rows * Columns;
 	const int32 TotalRegions = LevelRegions.Num();

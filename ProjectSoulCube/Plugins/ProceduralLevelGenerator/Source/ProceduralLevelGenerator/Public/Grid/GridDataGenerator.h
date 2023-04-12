@@ -79,7 +79,7 @@ protected:
 	TArray<uint8> RegionIndexMapping;
 
 	UPROPERTY()
-	TArray<uint32> RegionCellCount;
+	TArray<int32> RegionCellCount;
 
 	// to store if the is valid such that it is in a valid region or in a valid height.
 	UPROPERTY()
@@ -101,10 +101,6 @@ protected:
 #endif
 
 public:
-
-	// To Generate the mesh sections
-	UFUNCTION(BlueprintCallable)
-	TArray<struct FLevelSection> GenerateMeshSectionData();
 
 	/**
 	 *  GeneratePoisonDiskPoints inspired from From https://github.com/corporateshark/poisson-disk-generator/blob/master/PoissonGenerator.h
@@ -189,5 +185,5 @@ public:
 
 	FORCEINLINE int32 GetRegionIndex(const int32 GridX, const int32 GridY) const;
 
-	void CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<uint32>& OutRegionCellCount);
+	void CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<int32>& OutRegionCellCount);
 };

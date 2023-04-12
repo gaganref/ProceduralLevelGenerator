@@ -81,6 +81,8 @@ TArray<FLevelSection> UCustomProceduralMeshComponent::GenerateMeshSectionData(co
 		return EmptyMeshSections;
 	}
 
+	GridData->SortLevelRegions();
+	
 	const int32 Rows = GridData->GetRows();
 	const int32 Columns = GridData->GetColumns();
 	const FVector MeshScale = GridData->GetMeshScale();
@@ -88,7 +90,7 @@ TArray<FLevelSection> UCustomProceduralMeshComponent::GenerateMeshSectionData(co
 	const TArray<FFloatArray>& NoiseDataNormalized = GridData->GetCurrentNoiseMapNormalized();
 	
 	TArray<uint8> RegionIndexMapping;
-	TArray<uint32> RegionCellCount;
+	TArray<int32> RegionCellCount;
 	GridData->CalculateRegionData(RegionIndexMapping, RegionCellCount);
 	
 	TArray<FLevelSection> OutMeshSectionsData;
@@ -118,6 +120,9 @@ TArray<FLevelSection> UCustomProceduralMeshComponent::GenerateMeshSectionData(co
 	return OutMeshSectionsData;
 }
 
+
+// Do not use this
+
 void UCustomProceduralMeshComponent::CreateTest(const TObjectPtr<UGridDataGenerator> GridData)
 {
 	// SCOPE_CYCLE_COUNTER(STAT_ProcMesh_CreateMeshSection);
@@ -134,12 +139,19 @@ void UCustomProceduralMeshComponent::CreateTest(const TObjectPtr<UGridDataGenera
 	const TArray<FFloatArray>& NoiseDataNormalized = GridData->GetCurrentNoiseMapNormalized();
 	
 	TArray<uint8> RegionIndexMapping;
-	TArray<uint32> RegionCellCount;
+	TArray<int32> RegionCellCount;
 	GridData->CalculateRegionData(RegionIndexMapping, RegionCellCount);
+
+	TArray<int32> VertexIndex;
+	VertexIndex.Reserve(NoOfSections);
+	VertexIndex.Init(0, NoOfSections);
+
+	TArray<int32> TriangleIndex;
+	TriangleIndex.Reserve(NoOfSections);
+	TriangleIndex.Init(0, NoOfSections);
 	
 	TArray<FProcMeshSection> MeshSections;
-	MeshSections.Reserve(NoOfSections);
-	MeshSections.AddUninitialized(NoOfSections);
+	MeshSections.SetNum(NoOfSections, false);
 
 	for(int32 SectionIndex = 0; SectionIndex < NoOfSections; SectionIndex++)
 	{
@@ -150,6 +162,9 @@ void UCustomProceduralMeshComponent::CreateTest(const TObjectPtr<UGridDataGenera
 		CurrentSection.ProcVertexBuffer.Reset();
 		CurrentSection.ProcVertexBuffer.AddUninitialized(NumVerts);
 
+		CurrentSection.ProcIndexBuffer.Reset();
+		CurrentSection.ProcIndexBuffer.AddUninitialized(NumVerts);
+		
 		MeshSections[SectionIndex] = CurrentSection;
 	}
 
@@ -164,89 +179,82 @@ void UCustomProceduralMeshComponent::CreateTest(const TObjectPtr<UGridDataGenera
 			const int32 CurrentIndex = CoordinateToIndex(X, Y, Rows);
 			const int32 CurrentSectionIndex = RegionIndexMapping[CurrentIndex];
 			
-			// OutMeshSectionsData[CurrentRegionIndex].CreateQuad(NoiseDataNormalized, X, Y, BottomLeftX, BottomLeftY, Rows, Columns, MeshScale);
+			int32& CurrentVertexIndex = VertexIndex[CurrentSectionIndex];
+			int32& CurrentTriangleIndex = TriangleIndex[CurrentSectionIndex];
+			
+			FProcMeshSection& CurrentMeshSection = MeshSections[CurrentSectionIndex];
+			
+			CreateQuad(NoiseDataNormalized, X, Y, BottomLeftX, BottomLeftY, Rows, Columns, MeshScale, CurrentMeshSection, CurrentVertexIndex, CurrentTriangleIndex);
 		}
+	}
+
+	for(int32 SectionIndex = 0; SectionIndex < NoOfSections; SectionIndex++)
+	{
+		MeshSections[SectionIndex].bEnableCollision = true;
+		SetMaterial(SectionIndex, GridData->GetLevelRegions()[SectionIndex].RegionMaterial);
+		SetProcMeshSection(SectionIndex, MeshSections[SectionIndex]);
 	}
 }
 
 void UCustomProceduralMeshComponent::CreateQuad(const TArray<FFloatArray>& NoiseDataNormalized, const int32& InX,
 	const int32& InY, const float& InBottomLeftX, const float& InBottomLeftY, const int32& Rows, const int32& Columns,
-	FVector QuadScale)
+	FVector QuadScale, FProcMeshSection& MeshSection, int32& VertexIndex, int32& TriangleIndex)
 {
-	// // To Avoid 
-	// QuadScale.X = (QuadScale.X < 1) ? 1.0f : QuadScale.X;
-	// QuadScale.Y = (QuadScale.Y < 1) ? 1.0f : QuadScale.Y;
-	// QuadScale.Z = (QuadScale.Z < 1) ? 1.0f : QuadScale.Z;
+	QuadScale.X = (QuadScale.X < 1) ? 1.0f : QuadScale.X;
+	QuadScale.Y = (QuadScale.Y < 1) ? 1.0f : QuadScale.Y;
+	QuadScale.Z = (QuadScale.Z < 1) ? 1.0f : QuadScale.Z;
+
+	const int32 InitialVertexIndex = VertexIndex;
+	
+	// Triangle A - Index 0-2, Triangle A - Index 3-5
+	for(int i = 0; i < 6; i++)
+	{
+		const int32 CurrentVertexIndex = VertexIndex++;
+		FProcMeshVertex& Vertex = MeshSection.ProcVertexBuffer[CurrentVertexIndex];
+
+		const int32 CurrX = InX + CellVertexPos[i].X;
+		const int32 CurrY = InY + CellVertexPos[i].Y;
+		
+		Vertex.Position = FVector
+		(
+			InBottomLeftX + CurrX,
+			InBottomLeftY + CurrY,
+			NoiseDataNormalized[CurrX][CurrY]
+		) * QuadScale;
+
+		Vertex.UV0 = FVector2D(CurrX/static_cast<float>(Rows), CurrY/static_cast<float>(Columns));
+		MeshSection.ProcIndexBuffer[CurrentVertexIndex] = CurrentVertexIndex;
+		MeshSection.SectionLocalBox += Vertex.Position;
+	}
+	
+	FProcMeshVertex& Vertex0 = MeshSection.ProcVertexBuffer[InitialVertexIndex];
+	FProcMeshVertex& Vertex1 = MeshSection.ProcVertexBuffer[InitialVertexIndex + 1];
+	FProcMeshVertex& Vertex2 = MeshSection.ProcVertexBuffer[InitialVertexIndex + 2];
+	Vertex0.Normal = Vertex1.Normal = Vertex2.Normal = CalculateNormal(Vertex0, Vertex1, Vertex2);
+	Vertex0.Tangent = Vertex1.Tangent = Vertex2.Tangent = CalculateTangent(Vertex0, Vertex1, Vertex2);
+	
+	FProcMeshVertex& Vertex3 = MeshSection.ProcVertexBuffer[InitialVertexIndex + 3];
+	FProcMeshVertex& Vertex4 = MeshSection.ProcVertexBuffer[InitialVertexIndex + 4];
+	FProcMeshVertex& Vertex5 = MeshSection.ProcVertexBuffer[InitialVertexIndex + 5];
+	Vertex3.Normal = Vertex4.Normal = Vertex5.Normal = CalculateNormal(Vertex3, Vertex4, Vertex5);
+	Vertex3.Tangent = Vertex4.Tangent = Vertex5.Tangent = CalculateTangent(Vertex3, Vertex4, Vertex5);
+
+	
+	// const int32 VertexIndex0 = VertexIndex++;
+	// const int32 VertexIndex1 = VertexIndex++;
+	// const int32 VertexIndex2 = VertexIndex++;
+	// const int32 VertexIndex3 = VertexIndex++;
+	// const int32 VertexIndex4 = VertexIndex++;
+	// const int32 VertexIndex5 = VertexIndex++;
 	//
-	// // Noise Heights for quad vertex points
-	// const float BottomLeftNoiseHeight = NoiseDataNormalized[InX][InY];
-	// const float BottomRightNoiseHeight = NoiseDataNormalized[InX][InY+1];
-	// const float TopRightIndexNoiseHeight = NoiseDataNormalized[InX+1][InY+1];
-	// const float TopLeftIndexNoiseHeight = NoiseDataNormalized[InX+1][InY];
+	// FProcMeshVertex& Vertex0 = MeshSection.ProcVertexBuffer[VertexIndex0];
+	// FProcMeshVertex& Vertex1 = MeshSection.ProcVertexBuffer[VertexIndex1];
+	// FProcMeshVertex& Vertex2 = MeshSection.ProcVertexBuffer[VertexIndex2];
 	//
-	// // Triangle A
-	// const int32 BottomLeftIndex_A = VertexIndex++;
-	// const int32 TopRightIndex_A = VertexIndex++;
-	// const int32 TopLeftIndex_A = VertexIndex++;
-	//
-	// Vertices[BottomLeftIndex_A] = FVector(InBottomLeftX + InX, InBottomLeftY + InY, BottomLeftNoiseHeight) * QuadScale;
-	// Vertices[TopRightIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightIndexNoiseHeight) * QuadScale;
-	// Vertices[TopLeftIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY, TopLeftIndexNoiseHeight) * QuadScale;
-	//
-	// Uvs[BottomLeftIndex_A] = FVector2D(InX/static_cast<float>(Rows), InY/static_cast<float>(Columns));
-	// Uvs[TopRightIndex_A] = FVector2D((InX+1)/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
-	// Uvs[TopLeftIndex_A] = FVector2D((InX+1)/static_cast<float>(Rows), InY/static_cast<float>(Columns));
-	//
-	// // The order of these (clockwise/counter-clockwise) dictates which way the normal will face.
-	// Triangles[TriangleIndex++] = BottomLeftIndex_A;
-	// Triangles[TriangleIndex++] = TopRightIndex_A;
-	// Triangles[TriangleIndex++] = TopLeftIndex_A;
-	//
-	// // Calculate triangle edge vectors and normal
-	// const FVector Edge21 = Vertices[TopRightIndex_A] - Vertices[TopLeftIndex_A];
-	// const FVector Edge20 = Vertices[BottomLeftIndex_A] - Vertices[TopLeftIndex_A];
-	// const FVector Normal_A = (Edge21 ^ Edge20).GetSafeNormal();
-	//
-	// // If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
-	// Normals[BottomLeftIndex_A] = Normals[TopRightIndex_A] = Normals[TopLeftIndex_A] = Normal_A;
-	//
-	// // Tangents (perpendicular to the surface)
-	// const FVector SurfaceTangent_A = (Vertices[BottomLeftIndex_A] + Vertices[TopRightIndex_A] + Vertices[TopLeftIndex_A] / 3).GetSafeNormal();
-	// const FProcMeshTangent Tangent_A = FProcMeshTangent(SurfaceTangent_A, false);
-	// Tangents[BottomLeftIndex_A] = Tangents[TopRightIndex_A] = Tangents[TopLeftIndex_A] = Tangent_A;
-	//
-	//
-	// // Triangle B
-	// const int32 BottomLeftIndex_B = VertexIndex++;
-	// const int32 BottomRightIndex_B = VertexIndex++;
-	// const int32 TopRightIndex_B = VertexIndex++;
-	//
-	// Vertices[BottomLeftIndex_B] = FVector(InBottomLeftX + InX, InBottomLeftY + InY, BottomLeftNoiseHeight) * QuadScale;
-	// Vertices[BottomRightIndex_B] = FVector(InBottomLeftX + InX, InBottomLeftY + InY + 1, BottomRightNoiseHeight) * QuadScale;
-	// Vertices[TopRightIndex_B] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightIndexNoiseHeight) * QuadScale;
-	//
-	// Uvs[BottomLeftIndex_B] = FVector2D(InX/static_cast<float>(Rows), InY/static_cast<float>(Columns));
-	// Uvs[BottomRightIndex_B] = FVector2D(InX/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
-	// Uvs[TopRightIndex_B] = FVector2D((InX+1)/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
-	//
-	// // The order of these (clockwise/counter-clockwise) dictates which way the normal will face.
-	// Triangles[TriangleIndex++] = BottomLeftIndex_B;
-	// Triangles[TriangleIndex++] = BottomRightIndex_B;
-	// Triangles[TriangleIndex++] = TopRightIndex_B;
-	//
-	// // Calculate triangle edge vectors and normal
-	// const FVector Edge43 = Vertices[BottomLeftIndex_B] - Vertices[BottomRightIndex_B];
-	// const FVector Edge45 = Vertices[TopRightIndex_B] - Vertices[BottomRightIndex_B];
-	// const FVector NormalCurrent_B = (Edge43 ^ Edge45).GetSafeNormal();
-	//
-	// // If not smoothing we just set the vertex normal to the same normal as the polygon they belong to
-	// Normals[BottomLeftIndex_B] = Normals[BottomRightIndex_B] = Normals[TopRightIndex_B] = NormalCurrent_B;
-	//
-	//
-	// // Tangents (perpendicular to the surface)
-	// const FVector SurfaceTangent_B = (Vertices[BottomLeftIndex_B] + Vertices[BottomRightIndex_B] + Vertices[TopRightIndex_B] / 3).GetSafeNormal();
-	// const FProcMeshTangent Tangent_B = FProcMeshTangent(SurfaceTangent_B, false);
-	// Tangents[BottomLeftIndex_B] = Tangents[BottomRightIndex_B] = Tangents[TopRightIndex_B] = Tangent_B;
+	// FProcMeshVertex& Vertex3 = MeshSection.ProcVertexBuffer[VertexIndex3];
+	// FProcMeshVertex& Vertex4 = MeshSection.ProcVertexBuffer[VertexIndex4];
+	// FProcMeshVertex& Vertex5 = MeshSection.ProcVertexBuffer[VertexIndex5];
+	
 }
 
 void UCustomProceduralMeshComponent::CreateTriangle(FProcMeshSection& CurrentSection, FProcMeshVertex& BottomLeftVertex, FProcMeshVertex& TopRightVertex, FProcMeshVertex& TopLeftVertex,

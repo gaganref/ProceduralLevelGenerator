@@ -3,8 +3,8 @@
 
 #include "Grid/Grid.h"
 
+#include "Generator/GeneratorHelpers.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "Misc/Noise.h"
 
 void UGrid::PostInitProperties()
 {
@@ -93,7 +93,7 @@ void UGrid::InitGrid_Triangle_Shading()
 	Triangles.AddUninitialized(TriangleCount);
 	
 	
-	const TArray<FFloatArray>& HeightMap = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
+	const TArray<FFloatArray>& HeightMap = UGeneratorHelpers::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
 
 	NoiseColors.Reserve(Rows);
 	MapColors.Reserve(Rows);
@@ -271,7 +271,7 @@ void UGrid::InitGrid_Quad_Shading()
 	Triangles.AddUninitialized(TriangleCount);
 	
 	
-	const TArray<FFloatArray>& HeightMap = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
+	const TArray<FFloatArray>& HeightMap = UGeneratorHelpers::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
 
 	NoiseColors.Reserve(Rows);
 	MapColors.Reserve(Rows);
@@ -388,7 +388,7 @@ void UGrid::InitGrid_Quad_Shading()
 
 void UGrid::InitGrid()
 {
-	const TArray<FFloatArray>& HeightMap = UNoise::GenerateNoiseMap(Seed, Rows, Columns, Scale, Octaves, Persistence, Lacunarity, Offset);
+	const TArray<FFloatArray>& HeightMap = UGeneratorHelpers::GenerateNoiseMap(Seed, Rows, Columns, Scale, Octaves, Persistence, Lacunarity, Offset);
 
 	NoiseColors.Reserve(Rows);
 	MapColors.Reserve(Rows);

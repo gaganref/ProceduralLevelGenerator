@@ -1,17 +1,12 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Misc/Noise.h"
+
+#include "Generator/GeneratorHelpers.h"
 
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/Structs.h"
 
-UNoise::UNoise(const FObjectInitializer& ObjectInitializer)
-: Super(ObjectInitializer)
-{
-	
-}
-
-TArray<FVector2D> UNoise::CalculateOcataveOffsets(const int& Seed, const int32& Octaves, const FVector2D& Offset)
+TArray<FVector2D> UGeneratorHelpers::CalculateOcataveOffsets(const int& Seed, const int32& Octaves, const FVector2D& Offset)
 {
 	TArray<FVector2D> OctaveOffsets;
 	OctaveOffsets.Reserve(Octaves);
@@ -28,9 +23,18 @@ TArray<FVector2D> UNoise::CalculateOcataveOffsets(const int& Seed, const int32& 
 	return OctaveOffsets;
 }
 
-float UNoise::CalculatePerlinValueAtPoint(const int32& MapHalfWidth, const int32& MapHalfHeight, const int32& PointX,
-	const int32& PointY, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity,
-	const TArray<FVector2D>& OctaveOffsets)
+void UGeneratorHelpers::FloodFill(FDisjointSet& OutDisjointSet)
+{
+}
+
+FVector2D UGeneratorHelpers::GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance,
+	const FRandomStream& RandomStream) const
+{
+}
+
+float UGeneratorHelpers::CalculatePerlinValueAtPoint(const int32& MapHalfWidth, const int32& MapHalfHeight,
+                                                     const int32& PointX, const int32& PointY, float Scale, const int32& Octaves, const float& Persistence,
+                                                     const float& Lacunarity, const TArray<FVector2D>& OctaveOffsets)
 {
 	// To avoid zero division error
 	if(Scale <= 0){Scale = 0.0001f;}
@@ -42,7 +46,6 @@ float UNoise::CalculatePerlinValueAtPoint(const int32& MapHalfWidth, const int32
 	for(int O=0; O < Octaves; ++O)
 	{
 		const FVector2D Sample = FVector2D((PointX - MapHalfWidth), (PointY - MapHalfHeight)) / Scale * Frequency + OctaveOffsets[O] * Frequency;
-		// const FVector2D Sample = FVector2D((PointX - MapHalfWidth), (PointY - MapHalfHeight)) / Scale * Frequency + OctaveOffsets[O];
 		const float PerlinValue = FMath::PerlinNoise2D(Sample); // PerlinValue Range is between [-1,1].
 		NoiseHeight += PerlinValue * Amplitude;
 		Amplitude *= Persistence;
@@ -53,8 +56,8 @@ float UNoise::CalculatePerlinValueAtPoint(const int32& MapHalfWidth, const int32
 	return FMath::Clamp(NoiseHeight, 0.0f, 1.0f);
 }
 
-TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWidth, const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const
-                                             FVector2D& Offset)
+TArray<FFloatArray> UGeneratorHelpers::GenerateNoiseMap(const int& Seed, const int32& MapWidth, const int32& MapHeight,
+	float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const FVector2D& Offset)
 {
 	// To avoid zero division error
 	if(Scale <= 0){Scale = 0.0001f;}
@@ -63,7 +66,6 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 	const float MapHalfHeight = MapHeight/2.0f;
 	
 	const TArray<FVector2D>& OctaveOffsets = CalculateOcataveOffsets(Seed, Octaves, Offset);
-	
 	
 	FFloatArray FillArray;
 	FillArray.Reserve(MapHeight);
@@ -84,8 +86,10 @@ TArray<FFloatArray> UNoise::GenerateNoiseMap(const int& Seed, const int32& MapWi
 	return NoiseMap;
 }
 
-TArray<FFloatArray> UNoise::GenerateNoiseMapNormalized(const int& Seed, const int32& MapWidth, const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity, const
-											 FVector2D& Offset, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax)
+TArray<FFloatArray> UGeneratorHelpers::GenerateNoiseMapNormalized(const int& Seed, const int32& MapWidth,
+	const int32& MapHeight, float Scale, const int32& Octaves, const float& Persistence, const float& Lacunarity,
+	const FVector2D& Offset, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier,
+	const float& ClampMin, const float& ClampMax)
 {
 	// To avoid zero division error
 	if(Scale <= 0){Scale = 0.0001f;}
@@ -116,9 +120,10 @@ TArray<FFloatArray> UNoise::GenerateNoiseMapNormalized(const int& Seed, const in
 	return NoiseMap;
 }
 
-TArray<FFloatArray> UNoise::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax)
+TArray<FFloatArray> UGeneratorHelpers::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap,
+	const UCurveFloat* NormalizeCurve, const float& MeshHeightMultiplier, const float& ClampMin, const float& ClampMax)
 {
-	if(NoiseMap.Num() < 1)
+	if(NoiseMap.IsEmpty())
 	{
 		return NoiseMap;
 	}
@@ -137,4 +142,14 @@ TArray<FFloatArray> UNoise::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMa
 	}
 
 	return OutNoiseMap;
+}
+
+TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPoints(int32 NoOfPoints, float MinimumDistance, int32 NoOfTries)
+{
+	
+}
+
+TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPointsAdvanced(int32 NoOfPoints, float MinimumDistance,
+	int32 NoOfTries)
+{
 }
