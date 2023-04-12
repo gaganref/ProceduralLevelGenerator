@@ -7,6 +7,7 @@
 #include "Misc/Structs.h"
 #include "GridDataGenerator.generated.h"
 
+class FDisjointSet;
 class UQuadTree;
 struct FLinearColorArray;
 struct FTerrainType;
@@ -101,6 +102,8 @@ protected:
 
 public:
 
+	// To Generate the mesh sections
+	UFUNCTION(BlueprintCallable)
 	TArray<struct FLevelSection> GenerateMeshSectionData();
 
 	/**
@@ -114,10 +117,20 @@ public:
 	// To generate points that are apart from each other a minimum distance and evenly (using poison alg).
 	UFUNCTION(BlueprintCallable)
 	TArray<FVector2D> GeneratePoisonDiskPointsEvenly(float MinimumDistance, int32 MaxPoints);
+	
+	void FloodFill(FDisjointSet& OutDisjointSet);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector2D> FindConnectedPoints2D(const FVector2D& InputPoint, const TArray<FVector2D>& TargetPoints);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FVector> FindConnectedPoints(const FVector& InputLocation, const TArray<FVector>& TargetLocations);
 
 	FVector2D GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance, const FRandomStream& RandomStream) const;
 	
 	FORCEINLINE int32 GetCellIndex(const int32& GridX, const int32& GridY) const;
+
+	FORCEINLINE FVector2D GetCellIndex2D(const int32& GridIndex) const;
 
 	FORCEINLINE int32 GetCellIndex(const FVector2D& GridXY) const;
 	
@@ -134,8 +147,6 @@ public:
 	FORCEINLINE float GetGridWidth() const;
 	
 	FORCEINLINE float GetGridHeight() const;
-
-	bool IsPointInNeighbourhood(const FVector2D& Point, const float& MinimumDistance) const;
 	
 	UFUNCTION(Category = "Level Data", CallInEditor)
 	void SortLevelRegions();

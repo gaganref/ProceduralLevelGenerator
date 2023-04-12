@@ -452,33 +452,33 @@ struct FCell
 };
 
 // Uses a lots of storage needs lots of optimization or only 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FLevelSection
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	int32 Size = 0;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	int32 VertexIndex = 0;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	int32 TriangleIndex = 0;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FVector> Vertices;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FVector2D> Uvs;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<int32> Triangles;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FVector> Normals;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TArray<struct FProcMeshTangent> Tangents;
 
 	FLevelSection() = default;

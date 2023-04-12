@@ -3,6 +3,7 @@
 
 #include "Grid/GridDataGenerator.h"
 
+#include "DisjointSet.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/Noise.h"
 #include "QuadTree/QuadTree.h"
@@ -172,8 +173,6 @@ TArray<FVector2D> UGridDataGenerator::GeneratePoisonDiskPoints(int32 NoOfPoints,
 {
 	GenerateGridColorData();	// To make Sure that the data is  up to date
 	
-	const TArray<FFloatArray>& NoiseData = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
-
 	const FRandomStream RandomStream(Seed);
 
 	const float HalfGridWidth = GetGridWidth()/2.0f;
@@ -353,6 +352,81 @@ TArray<FVector2D> UGridDataGenerator::GeneratePoisonDiskPointsEvenly(float Minim
     return Points;
 }
 
+void UGridDataGenerator::FloodFill(FDisjointSet& OutDisjointSet)
+{
+	constexpr int32 DirectionX[] = {-1, 0, 1, 0};
+	constexpr int32 DirectionY[] = {0, 1, 0, -1};
+
+	for (int32 y = 0; y < Columns; ++y) {
+		for (int32 x = 0; x < Rows; ++x) {
+			
+			const int32 CurrentIndex = GetCellIndex(x, y);
+			
+			if (!IsValidCell[CurrentIndex]) {
+				continue;
+			}
+
+			for (int32 Direction = 0; Direction < 4; ++Direction) {
+				int32 NewX = x + DirectionX[Direction];
+				int32 NewY = y + DirectionY[Direction];
+
+				if (NewX < 0 || NewX >= Rows || NewY < 0 || NewY >= Columns || !IsValidCell[CurrentIndex]) {
+					continue;
+				}
+
+				const int32 NeighborIndex = GetCellIndex(NewX, NewY);
+				OutDisjointSet.Union(CurrentIndex, NeighborIndex);
+			}
+		}
+	}
+}
+
+TArray<FVector2D> UGridDataGenerator::FindConnectedPoints2D(const FVector2D& InputPoint, const TArray<FVector2D>& TargetPoints)
+{
+	FDisjointSet DisjointSet(Rows * Columns);
+
+	FloodFill(DisjointSet);
+
+	TArray<FVector2D> ConnectedPoints;
+	
+	const int32 InputPointIndex = GetCellIndex(InputPoint);
+	const int32 InputPointRepresentative = DisjointSet.Find(InputPointIndex);
+
+	for (const FVector2D& TargetPoint : TargetPoints) {
+		const int32 TargetPointIndex = GetCellIndex(TargetPoint);
+		const int32 TargetPointRepresentative = DisjointSet.Find(TargetPointIndex);
+
+		if (InputPointRepresentative == TargetPointRepresentative) {
+			ConnectedPoints.Add(TargetPoint);
+		}
+	}
+
+	return ConnectedPoints;
+}
+
+TArray<FVector> UGridDataGenerator::FindConnectedPoints(const FVector& InputLocation, const TArray<FVector>& TargetLocations)
+{
+	FDisjointSet DisjointSet(Rows * Columns);
+
+	FloodFill(DisjointSet);
+
+	TArray<FVector> ConnectedPoints;
+	
+	const int32 InputPointIndex = GetCellIndexByLocation(InputLocation);
+	const int32 InputPointRepresentative = DisjointSet.Find(InputPointIndex);
+
+	for (const FVector& TargetLocation : TargetLocations) {
+		const int32 TargetPointIndex = GetCellIndexByLocation(TargetLocation);
+		const int32 TargetPointRepresentative = DisjointSet.Find(TargetPointIndex);
+
+		if (InputPointRepresentative == TargetPointRepresentative) {
+			ConnectedPoints.Add(TargetLocation);
+		}
+	}
+
+	return ConnectedPoints;
+}
+
 FVector2D UGridDataGenerator::GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance, const FRandomStream& RandomStream) const
 {
 	// start with non-uniform distribution
@@ -375,12 +449,19 @@ FVector2D UGridDataGenerator::GenerateRandomPointAround(const FVector2D& Point, 
 
 FORCEINLINE int32 UGridDataGenerator::GetCellIndex(const int32& GridX, const int32& GridY) const
 {
-	return Rows * GridY + GridX; 
+	return GridY * Rows + GridX; 
 }
 
 FORCEINLINE int32 UGridDataGenerator::GetCellIndex(const FVector2D& GridXY) const
 {
 	return GetCellIndex(GridXY.X, GridXY.Y); 
+}
+
+FVector2D UGridDataGenerator::GetCellIndex2D(const int32& GridIndex) const
+{
+	const int32 X = GridIndex / Rows;
+	const int32 Y = GridIndex % Rows;
+	return FVector2D(X, Y);
 }
 
 FORCEINLINE int32 UGridDataGenerator::GetCellIndexByLocation(const FVector& Location) const 
