@@ -58,16 +58,16 @@ void UGridDataGenerator::InitGridColorData()
 		RegionIndexMapping.AddUninitialized(TotalCells);
 	}
 	
-	if(SectionCellCount.Num() != TotalRegions)
+	if(RegionCellCount.Num() != TotalRegions)
 	{
-		SectionCellCount.Empty();
-		SectionCellCount.Reserve(TotalRegions);
-		SectionCellCount.AddUninitialized(TotalRegions);	
+		RegionCellCount.Empty();
+		RegionCellCount.Reserve(TotalRegions);
+		RegionCellCount.AddUninitialized(TotalRegions);	
 	}
 	
 	for(int32 Itr = 0; Itr < TotalRegions; Itr++)
 	{
-		SectionCellCount[Itr] = 0;
+		RegionCellCount[Itr] = 0;
 	}
 
 	if(IsValidCell.Num() != TotalCells)
@@ -82,9 +82,7 @@ void UGridDataGenerator::GenerateGridColorData()
 {
 	InitGridColorData();
 
-	// NoiseData = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
-	const TArray<FFloatArray>& NoiseData = UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
-	
+	const TArray<FFloatArray>& NoiseData = GetCurrentNoiseMap();
 	int32 Itr = 0;
 	
 	for(int Y=0; Y < Columns; ++Y)
@@ -112,7 +110,7 @@ void UGridDataGenerator::GenerateGridColorData()
 					MapColorsRaw[Itr+2] = Region.LinearColor.R * 255;
 					MapColorsRaw[Itr+3] = Region.LinearColor.A * 255;
 					
-					SectionCellCount[RegionIndex]++;
+					RegionCellCount[RegionIndex]++;
 
 					const int32 CurrCellIndex = GetCellIndex(X, Y);
 					
@@ -144,12 +142,11 @@ TArray<FLevelSection> UGridDataGenerator::GenerateMeshSectionData()
 	TArray<FLevelSection> OutMeshSectionsData;
 	OutMeshSectionsData.Reserve(LevelRegions.Num());
 
-	const TArray<FFloatArray>&  NoiseDataNormalized = UNoise::GenerateNoiseMapNormalized(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset, HeightMultiplierCurve, MeshHeightMultiplier, -0.5f, 1.0f);
-
+	const TArray<FFloatArray>& NoiseDataNormalized = GetCurrentNoiseMapNormalized();
 	
 	for(int32 Itr = 0; Itr < LevelRegions.Num(); Itr++)
 	{
-		OutMeshSectionsData.Add(FLevelSection(SectionCellCount[Itr]));
+		OutMeshSectionsData.Add(FLevelSection(RegionCellCount[Itr]));
 	}
 
 	// This is the Grid based BottomLeft XY values that are unscaled as we will be scaling them in CreateQuad
@@ -271,8 +268,6 @@ TArray<FVector2D> UGridDataGenerator::GeneratePoisonDiskPointsEvenly(float Minim
 	const FRandomStream RandomStream(Seed);
 	
 	TArray<FVector2D> Points;
-
-    const FVector2D CellSize(MinimumDistance / FMath::Sqrt(2.0), MinimumDistance / FMath::Sqrt(2.0));
 	
 	const float HalfGridWidth = GetGridWidth()/2.0f;
 	const float HalfGridHeight = GetGridHeight()/ 2.0f;
@@ -497,8 +492,6 @@ FORCEINLINE FVector2D UGridDataGenerator::GetCellIndex2DByLocation(const FVector
 
 FORCEINLINE bool UGridDataGenerator::IsPointInGrid(const FVector2D& Point) const
 {
-	// return Point.X >= 0 && Point.X < GetGridWidth() && Point.Y >= 0 && Point.Y < GetGridHeight();	// this only checks for positive side
-	
 	const float HalfGridWidth = GetGridWidth()/2.0f;
 	const float HalfGridHeight = GetGridHeight()/ 2.0f;
 	return Point.X >= -HalfGridWidth && Point.X < HalfGridWidth && Point.Y >= -HalfGridHeight && Point.Y < HalfGridHeight;
@@ -519,3 +512,70 @@ FORCEINLINE float UGridDataGenerator::GetGridHeight() const
 	return Columns * MeshScale.Y;
 }
 
+TArray<FFloatArray> UGridDataGenerator::GetCurrentNoiseMap() const
+{
+	return UNoise::GenerateNoiseMap(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset);
+}
+
+TArray<FFloatArray> UGridDataGenerator::GetCurrentNoiseMapNormalized() const
+{
+	return UNoise::GenerateNoiseMapNormalized(Seed, Rows+1, Columns+1, Scale, Octaves, Persistence, Lacunarity, Offset, HeightMultiplierCurve, MeshHeightMultiplier, -0.5f, 1.0f);
+}
+
+int32 UGridDataGenerator::GetRegionCellCount(const int32 SectionIndex) const
+{
+	if(RegionCellCount.IsValidIndex(SectionIndex))
+	{
+		return RegionCellCount[SectionIndex];
+	}
+
+	return -1;
+}
+
+int32 UGridDataGenerator::GetRegionIndex(const int32 GridX, const int32 GridY) const
+{
+	const int32 CurrentCellIndex = GetCellIndex(GridX, GridY);
+
+	if(RegionIndexMapping.IsValidIndex(CurrentCellIndex))
+	{
+		return RegionIndexMapping[CurrentCellIndex];
+	}
+
+	return -1;
+}
+
+void UGridDataGenerator::CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<uint32>& OutRegionCellCount)
+{
+	const int32 TotalCells = Rows * Columns;
+	const int32 TotalRegions = LevelRegions.Num();
+	
+	OutRegionIndexMapping.Empty();
+	OutRegionIndexMapping.Reserve(TotalCells);
+	OutRegionIndexMapping.AddUninitialized(TotalCells);
+	
+	OutRegionCellCount.Empty();
+	OutRegionCellCount.Reserve(TotalRegions);
+	OutRegionCellCount.Init(0, TotalRegions);
+	
+	const TArray<FFloatArray>& NoiseMap = GetCurrentNoiseMap();
+		
+	for(int X=0; X < Rows; ++X)
+	{
+		for(int Y=0; Y < Columns; ++Y)
+		{
+			for(int32 RegionIndex= 0; RegionIndex < LevelRegions.Num(); RegionIndex++)
+			{
+				const FTerrainType& Region = LevelRegions[RegionIndex];
+				
+				if(NoiseMap[X][Y] <= Region.MaxHeight)
+				{
+					const int32 CurrCellIndex = GetCellIndex(X, Y);
+					OutRegionIndexMapping[CurrCellIndex] = RegionIndex;
+					OutRegionCellCount[RegionIndex]++;
+					
+					break;
+				}
+			}
+		}
+	}
+}

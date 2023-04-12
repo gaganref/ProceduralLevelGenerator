@@ -58,7 +58,7 @@ protected:
 	TArray<FTerrainType> LevelRegions;
 
 	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1.0 , AllowPreserveRatio, Delta = 1))
-	FVector MeshScale = FVector(1.0f, 1.0f, 1.0f);
+	FVector MeshScale = FVector(100.0f, 100.0f, 100.0f);
 	
 	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 100, Delta = 0.5, SliderExponent = 1))
 	float MeshHeightMultiplier = 30.0f;
@@ -79,7 +79,7 @@ protected:
 	TArray<uint8> RegionIndexMapping;
 
 	UPROPERTY()
-	TArray<uint32> SectionCellCount;
+	TArray<uint32> RegionCellCount;
 
 	// to store if the is valid such that it is in a valid region or in a valid height.
 	UPROPERTY()
@@ -178,4 +178,16 @@ public:
 	FORCEINLINE const TArray<uint8>& GetNoiseColorsRaw() const {return NoiseColorsRaw;}
 
 	FORCEINLINE const TArray<uint8>& GetMapColorsRaw() const {return MapColorsRaw;}
+
+	FORCEINLINE FVector GetMeshScale() const {return MeshScale;}
+
+	FORCEINLINE TArray<FFloatArray> GetCurrentNoiseMap() const;
+	
+	FORCEINLINE TArray<FFloatArray> GetCurrentNoiseMapNormalized() const;
+
+	FORCEINLINE int32 GetRegionCellCount(const int32 SectionIndex) const;
+
+	FORCEINLINE int32 GetRegionIndex(const int32 GridX, const int32 GridY) const;
+
+	void CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<uint32>& OutRegionCellCount);
 };

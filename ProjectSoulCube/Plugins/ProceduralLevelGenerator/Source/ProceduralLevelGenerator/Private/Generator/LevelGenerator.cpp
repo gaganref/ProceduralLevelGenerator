@@ -8,7 +8,7 @@
 #include "Misc/CustomProceduralMeshComponent.h"
 #include "Misc/Structs.h"
 
-static const TArray<FLinearColor> EmptyVertexColors;
+// static const TArray<FLinearColor> EmptyVertexColors;
 
 // Sets default values
 ALevelGenerator::ALevelGenerator()
@@ -72,14 +72,15 @@ void ALevelGenerator::GenerateMesh() const
 		return;
 	}
 
-	int32 SectionIndex= 0;
-	for(const auto& Section : GridData->GenerateMeshSectionData())
-	{
-		TObjectPtr<UMaterialInstance> CurrentMaterial = GridData->GetLevelRegions()[SectionIndex].RegionMaterial;
-	
-		ProceduralMeshComponent->CreateMeshSection_LinearColor(SectionIndex, Section.Vertices, Section.Triangles, Section.Normals, Section.Uvs, EmptyVertexColors, Section.Tangents, true);
-		ProceduralMeshComponent->SetMaterial(SectionIndex, CurrentMaterial);
-	
-		SectionIndex++;
-	}
+	ProceduralMeshComponent->CreateMesh(GridData);
+	// int32 SectionIndex= 0;
+	// for(const auto& Section : GridData->GenerateMeshSectionData())
+	// {
+	// 	TObjectPtr<UMaterialInstance> CurrentMaterial = GridData->GetLevelRegions()[SectionIndex].RegionMaterial;
+	//
+	// 	ProceduralMeshComponent->CreateMeshSection_LinearColor(SectionIndex, Section.Vertices, Section.Triangles, Section.Normals, Section.Uvs, EmptyVertexColors, Section.Tangents, true);
+	// 	ProceduralMeshComponent->SetMaterial(SectionIndex, CurrentMaterial);
+	//
+	// 	SectionIndex++;
+	// }
 }

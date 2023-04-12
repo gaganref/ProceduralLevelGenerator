@@ -519,7 +519,6 @@ struct FLevelSection
 
 	void CreateQuad(const TArray<FFloatArray>& NoiseDataNormalized, const int32& InX, const int32& InY, const float& InBottomLeftX, const float& InBottomLeftY, const int32& Rows, const int32& Columns, FVector QuadScale)
 	{
-		// To Avoid 
 		QuadScale.X = (QuadScale.X < 1) ? 1.0f : QuadScale.X;
 		QuadScale.Y = (QuadScale.Y < 1) ? 1.0f : QuadScale.Y;
 		QuadScale.Z = (QuadScale.Z < 1) ? 1.0f : QuadScale.Z;
