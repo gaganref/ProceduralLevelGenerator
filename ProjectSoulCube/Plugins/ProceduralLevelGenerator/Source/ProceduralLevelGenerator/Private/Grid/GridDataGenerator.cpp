@@ -82,7 +82,8 @@ void UGridDataGenerator::GenerateGridColorData()
 {
 	InitGridColorData();
 
-	const TArray<FFloatArray>& NoiseData = GetCurrentNoiseMap();
+	// const TArray<FFloatArray>& NoiseData = GetCurrentNoiseMap();
+	const TArray<FFloatArray>& NoiseData = UGeneratorHelpers::GenerateFallOffMap(Rows, Columns, FallOffStart, FallOffEnd);
 	int32 Itr = 0;
 	
 	for(int Y=0; Y < Columns; ++Y)

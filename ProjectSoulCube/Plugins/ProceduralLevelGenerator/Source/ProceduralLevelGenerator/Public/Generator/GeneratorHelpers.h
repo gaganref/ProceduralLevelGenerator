@@ -41,6 +41,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Grid")
 	static bool IsPointInGrid(const FVector2D Point, const float Width, const float Height);
+
+	UFUNCTION(BlueprintCallable, Category = "Noise")
+	static TArray<FFloatArray> GenerateFallOffMap(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd);
 	
 	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static float CalculatePerlinValueAtPoint(const int32 MapHalfWidth, const int32 MapHalfHeight, const int32 PointX, const int32 PointY, float Scale,

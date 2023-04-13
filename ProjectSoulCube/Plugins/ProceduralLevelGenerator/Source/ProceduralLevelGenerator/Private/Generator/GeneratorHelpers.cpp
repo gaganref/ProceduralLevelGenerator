@@ -49,6 +49,68 @@ bool UGeneratorHelpers::IsPointInGrid(const FVector2D Point, const float Width, 
 	return Point.X >= -HalfGridWidth && Point.X < HalfGridWidth && Point.Y >= -HalfGridHeight && Point.Y < HalfGridHeight;
 }
 
+TArray<FFloatArray> UGeneratorHelpers::GenerateFallOffMap(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd)
+{
+	FFloatArray FillArray;
+	FillArray.Reserve(MapHeight);
+	FillArray.AddUninitialized(MapHeight);
+
+	TArray<FFloatArray> FallOffMap;
+	FallOffMap.Reserve(MapWidth);
+	FallOffMap.Init(FillArray, MapWidth);
+
+	// for(int Y=0; Y < MapHeight; ++Y)
+	// {
+	// 	for(int X=0; X < MapWidth; ++X)
+	// 	{
+	// 		// const float PosX = X/static_cast<float>(MapWidth) * 2 - 1;
+	// 		// const float PosY = Y/static_cast<float>(MapHeight) * 2 - 1;
+	//
+	// 		const float PosX = (static_cast<float>(X)/MapWidth) * 2 - 1;
+	// 		const float PosY = (static_cast<float>(Y)/MapHeight) * 2 - 1;
+	//
+	// 		// Find the value that is closer to the edge
+	// 		const float Value = FMath::Max(FMath::Abs(PosX), FMath::Abs(PosY));
+	//
+	// 		if(Value < FallOffStart)
+	// 		{
+	// 			FallOffMap[X][Y] = 1;
+	// 		}
+	// 		else if(Value > FallOffEnd)
+	// 		{
+	// 			FallOffMap[X][Y] = 0;
+	// 		}
+	// 		else
+	// 		{
+	// 			FallOffMap[X][Y] =  FMath::SmoothStep(1.0f, 0.0f, FMath::GetRangePct(FallOffStart, FallOffEnd, Value));
+	// 			// FallOffMap[X][Y] = FMath::SmoothStep(1.0f, 0.0f, static_cast<float>(UKismetMathLibrary::NormalizeToRange(FallOffStart, FallOffEnd, Value)));
+	// 			// FallOffMap[X][Y] = FMath::Lerp(FallOffEnd, FallOffStart, Value);
+	// 		}
+	// 	}
+	// }
+	FVector2D center = FVector2D(MapWidth / 2.0f, MapHeight / 2.0f);
+	for(int Y=0; Y < MapHeight; ++Y)
+	{
+		for(int X=0; X < MapWidth; ++X)
+		{
+			// // Circular Method
+			// float distanceFromCenter = FVector2D::Distance(center, FVector2D(X, Y));
+			// float maxDistance = center.GetMax();
+			// float falloffValue = FMath::GetRangePct(FallOffStart * maxDistance, FallOffEnd * maxDistance, distanceFromCenter);
+			// FallOffMap[X][Y] = FMath::Clamp(falloffValue, 0.0f, 1.0f);
+
+			float distanceX = FMath::Abs(center.X - X) / center.X;
+			float distanceY = FMath::Abs(center.Y - Y) / center.Y;
+			float distanceFromCenter = FMath::Max(distanceX, distanceY);
+
+			float falloffValue = FMath::GetRangePct(FallOffStart, FallOffEnd, distanceFromCenter);
+			FallOffMap[X][Y] = FMath::Clamp(falloffValue, 0.0f, 1.0f);
+		}
+	}
+
+	return FallOffMap;
+}
+
 TArray<FVector2D> UGeneratorHelpers::CalculateOcataveOffsets(const int32 Seed, const int32 Octaves, const FVector2D Offset)
 {
 	TArray<FVector2D> OctaveOffsets;

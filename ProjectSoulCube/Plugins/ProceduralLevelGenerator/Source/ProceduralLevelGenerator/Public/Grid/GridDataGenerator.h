@@ -57,6 +57,12 @@ protected:
 	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (TitleProperty="TerrainName"))
 	TArray<FTerrainType> LevelRegions;
 
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.001))
+	float FallOffStart;
+
+	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.001))
+	float FallOffEnd;
+	
 	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1.0 , AllowPreserveRatio, Delta = 1))
 	FVector MeshScale = FVector(100.0f, 100.0f, 100.0f);
 	
