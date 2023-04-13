@@ -122,6 +122,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	TArray<FVector> FindConnectedPoints(const FVector& InputLocation, const TArray<FVector>& TargetLocations);
 
+	UFUNCTION(BlueprintCallable)
+	float GetGridWidth() const;
+
+	UFUNCTION(BlueprintCallable)
+	float GetGridHeight() const;
+
+	UFUNCTION(BlueprintCallable)
+	TArray<bool> GetGridPathInfo() const;
+
 	FVector2D GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance, const FRandomStream& RandomStream) const;
 	
 	FORCEINLINE int32 GetCellIndex(const int32& GridX, const int32& GridY) const;
@@ -139,10 +148,6 @@ public:
 	FORCEINLINE bool IsPointInGrid(const FVector2D& Point) const;
 
 	FORCEINLINE bool IsPointInCell(const FVector2D& Point, const FVector2D& CellPosition) const;
-
-	FORCEINLINE float GetGridWidth() const;
-	
-	FORCEINLINE float GetGridHeight() const;
 	
 	UFUNCTION(Category = "Level Data", CallInEditor)
 	void SortLevelRegions();

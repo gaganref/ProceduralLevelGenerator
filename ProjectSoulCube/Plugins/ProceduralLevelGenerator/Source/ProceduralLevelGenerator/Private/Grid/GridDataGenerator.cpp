@@ -471,12 +471,12 @@ FORCEINLINE bool UGridDataGenerator::IsPointInCell(const FVector2D& Point, const
 	return Point.X >= 0 && Point.X < GetGridWidth() && Point.Y >= 0 && Point.Y < GetGridHeight(); // TODO
 }
 
-FORCEINLINE float UGridDataGenerator::GetGridWidth() const
+float UGridDataGenerator::GetGridWidth() const
 {
 	return Rows * MeshScale.X;
 }
 
-FORCEINLINE float UGridDataGenerator::GetGridHeight() const
+float UGridDataGenerator::GetGridHeight() const
 {
 	return Columns * MeshScale.Y;
 }
@@ -547,4 +547,42 @@ void UGridDataGenerator::CalculateRegionData(TArray<uint8>& OutRegionIndexMappin
 			}
 		}
 	}
+}
+
+TArray<bool> UGridDataGenerator::GetGridPathInfo() const
+{
+	TArray<bool> PathInfo;
+	PathInfo.Reserve(Rows * Columns);
+	PathInfo.AddUninitialized(Rows * Columns);
+
+	const TArray<FFloatArray>& NoiseMap = GetCurrentNoiseMap();
+
+	for(int X=0; X < Rows; ++X)
+	{
+		for(int Y=0; Y < Columns; ++Y)
+		{
+			for(int32 RegionIndex= 0; RegionIndex < LevelRegions.Num(); RegionIndex++)
+			{
+				const FTerrainType& Region = LevelRegions[RegionIndex];
+				
+				if(NoiseMap[X][Y] <= Region.MaxHeight)
+				{
+					const int32 CurrCellIndex = GetCellIndex(X, Y);
+					
+					if(Region.ObjectSpawnProbability > 0)
+					{
+						PathInfo[CurrCellIndex] = true;
+					}
+					else
+					{
+						PathInfo[CurrCellIndex] = false;						
+					}
+					
+					break;
+				}
+			}
+		}
+	}
+
+	return PathInfo;
 }
