@@ -3,10 +3,8 @@
 
 #include "Grid/GridDataGenerator.h"
 
-#include "DisjointSet.h"
 #include "Generator/GeneratorHelpers.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "QuadTree/QuadTree.h"
 
 UGridDataGenerator::UGridDataGenerator()
 {
@@ -67,32 +65,6 @@ void UGridDataGenerator::InitGridColorData()
 		MapColorsRaw.Reserve(RawColorsSize);
 		MapColorsRaw.AddUninitialized(RawColorsSize);
 	}
-
-	if(RegionIndexMapping.Num() != TotalCells)
-	{
-		RegionIndexMapping.Empty();
-		RegionIndexMapping.Reserve(TotalCells);
-		RegionIndexMapping.AddUninitialized(TotalCells);
-	}
-	
-	if(RegionCellCount.Num() != TotalRegions)
-	{
-		RegionCellCount.Empty();
-		RegionCellCount.Reserve(TotalRegions);
-		RegionCellCount.AddUninitialized(TotalRegions);	
-	}
-	
-	for(int32 Itr = 0; Itr < TotalRegions; Itr++)
-	{
-		RegionCellCount[Itr] = 0;
-	}
-
-	if(IsValidCell.Num() != TotalCells)
-	{
-		IsValidCell.Empty();
-		IsValidCell.Reserve(TotalCells);
-		IsValidCell.AddUninitialized(TotalCells);
-	}
 }
 
 void UGridDataGenerator::GenerateGridColorData()
@@ -128,22 +100,6 @@ void UGridDataGenerator::GenerateGridColorData()
 					MapColorsRaw[Itr+2] = Region.LinearColor.R * 255;
 					MapColorsRaw[Itr+3] = Region.LinearColor.A * 255;
 					
-					RegionCellCount[RegionIndex]++;
-					
-					const int32 CurrCellIndex = GetCellIndex(X, Y);
-					
-					RegionIndexMapping[CurrCellIndex] = RegionIndex;
-
-					IsValidCell[CurrCellIndex] = Region.bCanSpawnObjects;
-					// if(Region.ObjectSpawnProbability > 0)
-					// {
-					// 	IsValidCell[CurrCellIndex] = true;
-					// }
-					// else
-					// {
-					// 	IsValidCell[CurrCellIndex] = false;						
-					// }
-					
 					break;
 				}
 			}
@@ -152,132 +108,6 @@ void UGridDataGenerator::GenerateGridColorData()
 		}
 	}
 	
-}
-//
-// TArray<FVector2D> UGridDataGenerator::FindConnectedPoints2D(const FVector2D& InputPoint, const TArray<FVector2D>& TargetPoints)
-// {
-// 	FDisjointSet DisjointSet(Rows * Columns);
-//
-// 	FloodFill(DisjointSet);
-//
-// 	TArray<FVector2D> ConnectedPoints;
-// 	
-// 	const int32 InputPointIndex = GetCellIndex(InputPoint);
-// 	const int32 InputPointRepresentative = DisjointSet.Find(InputPointIndex);
-//
-// 	for (const FVector2D& TargetPoint : TargetPoints) {
-// 		const int32 TargetPointIndex = GetCellIndex(TargetPoint);
-// 		const int32 TargetPointRepresentative = DisjointSet.Find(TargetPointIndex);
-//
-// 		if (InputPointRepresentative == TargetPointRepresentative) {
-// 			ConnectedPoints.Add(TargetPoint);
-// 		}
-// 	}
-//
-// 	return ConnectedPoints;
-// }
-//
-// TArray<FVector> UGridDataGenerator::FindConnectedPoints(const FVector& InputLocation, const TArray<FVector>& TargetLocations)
-// {
-// 	FDisjointSet DisjointSet(Rows * Columns);
-//
-// 	FloodFill(DisjointSet);
-//
-// 	TArray<FVector> ConnectedPoints;
-// 	
-// 	const int32 InputPointIndex = GetCellIndexByLocation(InputLocation);
-// 	const int32 InputPointRepresentative = DisjointSet.Find(InputPointIndex);
-//
-// 	for (const FVector& TargetLocation : TargetLocations) {
-// 		const int32 TargetPointIndex = GetCellIndexByLocation(TargetLocation);
-// 		const int32 TargetPointRepresentative = DisjointSet.Find(TargetPointIndex);
-//
-// 		if (InputPointRepresentative == TargetPointRepresentative) {
-// 			ConnectedPoints.Add(TargetLocation);
-// 		}
-// 	}
-//
-// 	return ConnectedPoints;
-// }
-//
-// FVector2D UGridDataGenerator::GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance, const FRandomStream& RandomStream) const
-// {
-// 	// start with non-uniform distribution
-// 	const float R1 = RandomStream.FRand();
-// 	const float R2 = RandomStream.FRand();
-//
-// 	// radius should be between MinDist and 2 * MinDist
-// 	const float Radius = MinimumDistance * ( R1 + 1.0f );
-//
-// 	// random angle - // UE_PI * 2 * R2
-// 	const float Angle = 6.283185307178f * R2;
-//
-// 	// the new point is generated around the point (x, y)
-// 	FVector2D OutPoint;
-// 	OutPoint.X = Point.X + Radius * cos( Angle );
-// 	OutPoint.Y = Point.Y + Radius * sin( Angle );
-//
-// 	return OutPoint;
-// }
-//
-FORCEINLINE int32 UGridDataGenerator::GetCellIndex(const int32& GridX, const int32& GridY) const
-{
-	return GridY * Rows + GridX; 
-}
-
-FORCEINLINE int32 UGridDataGenerator::GetCellIndex(const FVector2D& GridXY) const
-{
-	return GetCellIndex(GridXY.X, GridXY.Y); 
-}
-
-FVector2D UGridDataGenerator::GetCellIndex2D(const int32& GridIndex) const
-{
-	const int32 X = GridIndex / Rows;
-	const int32 Y = GridIndex % Rows;
-	return FVector2D(X, Y);
-}
-
-FORCEINLINE int32 UGridDataGenerator::GetCellIndexByLocation(const FVector& Location) const 
-{
-	int32 GridX = FMath::FloorToInt((Location.X + GetGridWidth() / 2.0f)/ MeshScale.X);
-	int32 GridY = FMath::FloorToInt((Location.Y + GetGridHeight() / 2.0f) / MeshScale.Y);
-
-	// Clamp values within grid dimensions
-	GridX = FMath::Clamp(GridX, 0, Rows - 1);
-	GridY = FMath::Clamp(GridY, 0, Columns - 1);
-
-	return GetCellIndex(GridX, GridY);
-}
-
-FORCEINLINE int32 UGridDataGenerator::GetCellIndexByLocation(const FVector2D& Location) const 
-{
-	const FVector2D CellIndex2D = GetCellIndex2DByLocation(Location);
-
-	return GetCellIndex(CellIndex2D.X, CellIndex2D.Y);
-}
-
-FORCEINLINE FVector2D UGridDataGenerator::GetCellIndex2DByLocation(const FVector2D& Location) const 
-{
-	int32 GridX = FMath::FloorToInt((Location.X + GetGridWidth() / 2.0f)/ MeshScale.X);
-	int32 GridY = FMath::FloorToInt((Location.Y + GetGridHeight() / 2.0f) / MeshScale.Y);
-
-	// Clamp values within grid dimensions
-	GridX = FMath::Clamp(GridX, 0, Rows - 1);
-	GridY = FMath::Clamp(GridY, 0, Columns - 1);
-
-	return FVector2D(GridX, GridY);
-}
-
-FORCEINLINE bool UGridDataGenerator::IsPointInGrid(const FVector2D& Point) const
-{
-	const float HalfGridWidth = GetGridWidth()/2.0f;
-	const float HalfGridHeight = GetGridHeight()/ 2.0f;
-	return Point.X >= -HalfGridWidth && Point.X < HalfGridWidth && Point.Y >= -HalfGridHeight && Point.Y < HalfGridHeight;
-}
-
-FORCEINLINE bool UGridDataGenerator::IsPointInCell(const FVector2D& Point, const FVector2D& CellPosition) const
-{
-	return Point.X >= 0 && Point.X < GetGridWidth() && Point.Y >= 0 && Point.Y < GetGridHeight(); // TODO
 }
 
 float UGridDataGenerator::GetGridWidth() const
@@ -299,28 +129,6 @@ TArray<float> UGridDataGenerator::GetCurrentNoiseMapNormalized() const
 {
 	TArray<float> NormalizedNoiseMap = NoiseMap;
 	return UGeneratorHelpers::NormalizeNoiseMap1D(NormalizedNoiseMap, HeightMultiplierCurve, MeshHeightMultiplier, -0.5f, 1.0f);
-}
-
-int32 UGridDataGenerator::GetRegionCellCount(const int32 SectionIndex) const
-{
-	if(RegionCellCount.IsValidIndex(SectionIndex))
-	{
-		return RegionCellCount[SectionIndex];
-	}
-
-	return -1;
-}
-
-int32 UGridDataGenerator::GetRegionIndex(const int32 GridX, const int32 GridY) const
-{
-	const int32 CurrentCellIndex = GetCellIndex(GridX, GridY);
-
-	if(RegionIndexMapping.IsValidIndex(CurrentCellIndex))
-	{
-		return RegionIndexMapping[CurrentCellIndex];
-	}
-
-	return -1;
 }
 
 void UGridDataGenerator::CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<int32>& OutRegionCellCount)

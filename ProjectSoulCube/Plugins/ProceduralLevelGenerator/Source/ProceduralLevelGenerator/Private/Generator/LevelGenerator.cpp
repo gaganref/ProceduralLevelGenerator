@@ -20,8 +20,6 @@ ALevelGenerator::ALevelGenerator()
 	ProceduralMeshComponent = CreateDefaultSubobject<UCustomProceduralMeshComponent>(TEXT("Procedural Mesh Component"));
 	ProceduralMeshComponent->SetupAttachment(RootComponent);
 
-	// ProceduralMeshComponent->SetCollisionProfileName("BlockAll");
-
 	SetActorScale3D(FVector(1.0f, 1.0f, 1.0f));
 	
 }

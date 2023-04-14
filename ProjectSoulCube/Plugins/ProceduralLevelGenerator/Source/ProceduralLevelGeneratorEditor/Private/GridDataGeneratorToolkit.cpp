@@ -3,9 +3,6 @@
 
 #include "GridDataGeneratorToolkit.h"
 
-#include "EditorStyleSet.h"
-#include "EditorStyleSet.h"
-#include "EditorStyleSet.h"
 #include "MapPreviewScene2D.h"
 #include "MapViewport.h"
 #include "Widgets/SMapTextureViewport.h"
@@ -76,30 +73,7 @@ void FGridDataGeneratorToolkit::InitEditor(const EToolkitMode::Type Mode, const 
 			)
 		)
 	);
-	//
-	// // Create a new UI action for our toolbar button
-	// GenerateCommand = UI_COMMAND(
-	// 	// The command name
-	// 	"MyCustomEditor.MyCommand",
-	// 	// The command description (for display purposes)
-	// 	"My Custom Command",
-	// 	// The tooltip for the command
-	// 	"Execute my custom command",
-	// 	// The UI action type (e.g. button)
-	// 	EUserInterfaceActionType::Button,
-	// 	// The input gesture for the command (optional)
-	// 	FInputGesture()
-	// );
-
-	// // Add the toolbar button to the editor UI
-	// ExtendMenu()
-	// 	.AddToolbarExtension(
-	// 		"Asset",
-	// 		EExtensionHook::After,
-	// 		GenerateCommand,
-	// 		FToolBarDelegate::CreateRaw(this, &FGridDataGeneratorToolkit::AddToolbarButton)
-	// 	);
-	//
+	
 	InitAssetEditor(EToolkitMode::Standalone, {}, "GridDataGeneratorEditor", Layout, true, true, InGridDataGenerator);
 }
 
@@ -166,25 +140,6 @@ void FGridDataGeneratorToolkit::UnregisterTabSpawners(const TSharedRef<FTabManag
 	InTabManager->UnregisterTabSpawner("NoiseMapTab");
 	InTabManager->UnregisterTabSpawner("ColorMapTab");
 	InTabManager->UnregisterTabSpawner("GridDataGeneratorDetailsTab");
-}
-
-// void FGridDataGeneratorToolkit::AddToolbarButton(FToolBarBuilder& ToolbarBuilder)
-// {
-// 	// Add the toolbar button to the builder
-// 	ToolbarBuilder.AddToolBarButton(
-// 		GenerateCommand,
-// 		// Tooltip for the button
-// 		TEXT("generate Grid Data"),
-// 		// Icon for the button (optional)
-// 		FSlateIcon(),
-// 		// Execution method for the button
-// 		FExecuteAction::CreateRaw(this, &FGridDataGeneratorToolkit::GenerateGridData)
-// 	);
-// }
-
-void FGridDataGeneratorToolkit::GenerateGridData()
-{
-	UE_LOG(LogTemp, Warning, TEXT("lfgjeoighojfe"));
 }
 
 int32 FGridDataGeneratorToolkit::GetRows() const

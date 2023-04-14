@@ -6,6 +6,7 @@
 #include "KismetProceduralMeshLibrary.h"
 #include "Structs.generated.h"
 
+#define UE_2_PI 					(6.2831853071795864f)
 
 UENUM(BlueprintType)
 enum ELevelRegion
@@ -274,10 +275,6 @@ struct FTerrainType
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bCanSpawnObjects = false;
-	
-	// // Only used if the corresponding point has a valid terrain height
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin=0, ClampMax=100))
-	// uint8 ObjectSpawnProbability = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FLinearColor LinearColor = FLinearColor::Black;

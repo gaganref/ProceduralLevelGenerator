@@ -25,8 +25,6 @@ public:
 	virtual FString GetWorldCentricTabPrefix() const override { return "GridDataGenerator "; }
 	virtual FLinearColor GetWorldCentricTabColorScale() const override { return {}; }
 	
-	void GenerateGridData();
-	
 	int32 GetRows() const;
 
 	int32 GetColumns() const;
@@ -46,6 +44,4 @@ private:
 	// UI action that will be bound to the toolbar button
 	TSharedPtr<FUICommandInfo> GenerateCommand;
 
-	// Create the toolbar button
-	// void AddToolbarButton(FToolBarBuilder& ToolbarBuilder);
 };

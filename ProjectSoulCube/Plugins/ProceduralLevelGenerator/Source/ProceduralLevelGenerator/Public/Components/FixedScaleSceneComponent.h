@@ -14,6 +14,10 @@ class PROCEDURALLEVELGENERATOR_API UFixedScaleSceneComponent : public USceneComp
 {
 	GENERATED_BODY()
 
+private:
+
+	static FVector Scale;
+	
 public:
 
 	UFixedScaleSceneComponent();

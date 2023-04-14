@@ -3,6 +3,8 @@
 
 #include "Components/FixedScaleSceneComponent.h"
 
+FVector UFixedScaleSceneComponent::Scale(FVector::OneVector);
+
 UFixedScaleSceneComponent::UFixedScaleSceneComponent()
 {
 	SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
@@ -15,7 +17,7 @@ void UFixedScaleSceneComponent::PostEditChangeProperty(FPropertyChangedEvent& Pr
 
 	if(PropertyName == ScaleName)
 	{
-		SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
+		SetRelativeScale3D(Scale);
 	}
 	
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -25,11 +27,8 @@ void UFixedScaleSceneComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTr
 {
 	Super::OnUpdateTransform(UpdateTransformFlags, Teleport);
 
-	UE_LOG(LogTemp, Warning, TEXT("Works"));
-	// If the actor's scale is different from 1.0f, reset it to 1.0f
-	
-	if (GetRelativeScale3D() != FVector(1.0f, 1.0f, 1.0f))
+	if (GetRelativeScale3D() != Scale)
 	{
-		SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
+		SetRelativeScale3D(Scale);
 	}
 }

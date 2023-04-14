@@ -11,11 +11,6 @@ FVector UCustomProceduralMeshComponent::Scale(FVector::OneVector);
 
 static const TArray<FLinearColor> EmptyVertexColors;
 
-static const FVector BottomLeftPosition(0.0f, 0.0f, 0.0f);
-static const FVector BottomRightPosition(0.0f, 1.0f, 0.0f);
-static const FVector TopRightPosition(1.0f, 1.0f, 0.0f);
-static const FVector TopLeftPosition(1.0f, 0.0f, 0.0f);
-
 // Sets default values for this component's properties
 UCustomProceduralMeshComponent::UCustomProceduralMeshComponent(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
@@ -34,7 +29,6 @@ void UCustomProceduralMeshComponent::OnUpdateTransform(EUpdateTransformFlags Upd
 {
 	Super::OnUpdateTransform(UpdateTransformFlags, Teleport);
 
-	UE_LOG(LogTemp, Warning, TEXT("Works"));
 	if(Scale != GetRelativeScale3D())
 	{
 		SetRelativeScale3D(Scale);
@@ -109,7 +103,6 @@ TArray<FLevelSection> UCustomProceduralMeshComponent::GenerateMeshSectionData(co
 	{
 		for(int Y=0; Y < Columns; ++Y)
 		{
-			// const int32 CurrentSectionIndex = GridData->GetRegionIndex(X, Y);
 			const int32 CurrentIndex = UGeneratorHelpers::CoordinateToIndex(X, Y, Rows);
 			const int32 CurrentSectionIndex = RegionIndexMapping[CurrentIndex];
 			

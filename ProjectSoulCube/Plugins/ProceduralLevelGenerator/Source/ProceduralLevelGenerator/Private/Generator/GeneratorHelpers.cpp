@@ -19,6 +19,11 @@ int32 UGeneratorHelpers::CoordinateToIndexWithFVector2D(const FVector2D Coordina
 
 FVector2D UGeneratorHelpers::IndexToCoordinate(const int32 Index, const int32 Rows)
 {
+	if(Rows < 1)
+	{
+		return FVector2D(-1.0f, -1.0f);
+	}
+	
 	const int32 X = Index / Rows;
 	const int32 Y = Index % Rows;
 	return FVector2D(X, Y);
@@ -27,6 +32,11 @@ FVector2D UGeneratorHelpers::IndexToCoordinate(const int32 Index, const int32 Ro
 int32 UGeneratorHelpers::LocationToIndex(const FVector2D Location, const float GridWidth, const float GridHeight,
 	const float CellWidth, const float CellHeight, const int32 Rows)
 {
+	if(Rows < 1 || CellWidth < 1 || CellHeight < 1)
+	{
+		return -1;
+	}
+	
 	const int32 X = FMath::FloorToInt((Location.X + GridWidth / 2.0f)/ CellWidth);
 	const int32 Y = FMath::FloorToInt((Location.Y + GridHeight / 2.0f) / CellHeight);
 
@@ -36,6 +46,11 @@ int32 UGeneratorHelpers::LocationToIndex(const FVector2D Location, const float G
 FVector2D UGeneratorHelpers::LocationToCoordinate(const FVector2D Location, const float GridWidth,
                                                   const float GridHeight, const float CellWidth, const float CellHeight)
 {
+	if(CellWidth < 1 || CellHeight < 1)
+	{
+		return FVector2D(-1.0f, -1.0f);
+	}
+	
 	const int32 X = FMath::FloorToInt((Location.X + GridWidth / 2.0f)/ CellWidth);
 	const int32 Y = FMath::FloorToInt((Location.Y + GridHeight / 2.0f) / CellHeight);
 
@@ -573,9 +588,7 @@ TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPointsAdvanced(const int32 Se
 	
     
 	const FVector2D InitialPoint = GenerateInitialPoissonPoint(RandomStream, 5, GridPathInfo, Rows, Columns, GridWidth, GridHeight, CellWidth, CellHeight);
-
-	// const FVector2D InitialPoint(RandomStream.FRandRange(-HalfGridWidth, HalfGridWidth), RandomStream.FRandRange(-HalfGridHeight, HalfGridHeight));
-
+	
 	Points.Add(InitialPoint);
     TArray<FVector2D> ActiveList = {InitialPoint};
 
@@ -588,7 +601,7 @@ TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPointsAdvanced(const int32 Se
         for (int32 k = 0; k < 30; ++k)
         {
 	        const float R = RandomStream.FRandRange(MinimumDistance, 2 * MinimumDistance);
-	        const float Theta = RandomStream.FRandRange(0, 2 * PI);
+	        const float Theta = RandomStream.FRandRange(0, UE_2_PI);
 
         	FVector2D NewPoint = ActivePoint + FVector2D(FMath::Cos(Theta), FMath::Sin(Theta)) * R;
         	if (NewPoint.X < -HalfGridWidth || NewPoint.X >= HalfGridWidth || NewPoint.Y < -HalfGridHeight || NewPoint.Y >= HalfGridHeight)
@@ -656,7 +669,7 @@ FVector2D UGeneratorHelpers::GetRandomPointAround2D(const FVector2D Point, const
 	const float Radius = MinimumDistance * ( R1 + 1.0f );
 
 	// random angle - // UE_PI * 2 * R2
-	const float Angle = 6.283185307178f * R2;
+	const float Angle = UE_2_PI * R2;
 
 	// the new point is generated around the point (x, y)
 	const float X = Point.X + Radius * cosf(Angle);
@@ -675,8 +688,8 @@ FVector UGeneratorHelpers::GetRandomPointAround3D(const FVector Point, const flo
 	const float Radius = MinimumDistance * (R1 + 1.0f);
 
 	// random angles - azimuth (0 to 2 * PI) and inclination (0 to PI)
-	const float Azimuth = 6.283185307178f * R2;
-	const float Inclination = 3.141592653589f * R3;
+	const float Azimuth = UE_2_PI * R2;
+	const float Inclination = UE_PI * R3;
 
 	// the new point is generated around the point (x, y, z)
 	const float X = Point.X + Radius * sinf(Inclination) * cosf(Azimuth);
