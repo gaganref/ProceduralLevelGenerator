@@ -102,6 +102,9 @@ protected:
 	UPROPERTY()
 	TArray<bool> IsValidCell;
 
+	UPROPERTY()
+	TArray<float> NoiseMap;
+
 protected:
 	
 	virtual void InitGridColorData();
@@ -123,21 +126,15 @@ public:
 	 *  GeneratePoisonDiskPoints inspired from From https://github.com/corporateshark/poisson-disk-generator/blob/master/PoissonGenerator.h
 	 */
 
-	// To generate points that are apart from each other a minimum distance.
+	// Refresh Noise Map to update it to the latest data
 	UFUNCTION(BlueprintCallable)
-	TArray<FVector2D> GeneratePoisonDiskPoints(int32 NoOfPoints, float MinimumDistance, int32 NoOfTries);
-
-	// To generate points that are apart from each other a minimum distance and evenly (using poison alg).
-	UFUNCTION(BlueprintCallable)
-	TArray<FVector2D> GeneratePoisonDiskPointsEvenly(float MinimumDistance, int32 MaxPoints);
+	void RefreshNoiseMap();
 	
-	void FloodFill(FDisjointSet& OutDisjointSet);
-
-	UFUNCTION(BlueprintCallable)
-	TArray<FVector2D> FindConnectedPoints2D(const FVector2D& InputPoint, const TArray<FVector2D>& TargetPoints);
-
-	UFUNCTION(BlueprintCallable)
-	TArray<FVector> FindConnectedPoints(const FVector& InputLocation, const TArray<FVector>& TargetLocations);
+	// UFUNCTION(BlueprintCallable)
+	// TArray<FVector2D> FindConnectedPoints2D(const FVector2D& InputPoint, const TArray<FVector2D>& TargetPoints);
+	//
+	// UFUNCTION(BlueprintCallable)
+	// TArray<FVector> FindConnectedPoints(const FVector& InputLocation, const TArray<FVector>& TargetLocations);
 
 	UFUNCTION(BlueprintCallable)
 	float GetGridWidth() const;
@@ -148,22 +145,26 @@ public:
 	UFUNCTION(BlueprintCallable)
 	TArray<bool> GetGridPathInfo() const;
 
+	float GetCellNoiseAveraged(const int32 InX, const int32 InY) const;
+	
+	bool GetCellNoiseValue();
+
 	FVector2D GenerateRandomPointAround(const FVector2D& Point, const float& MinimumDistance, const FRandomStream& RandomStream) const;
 	
 	FORCEINLINE int32 GetCellIndex(const int32& GridX, const int32& GridY) const;
-
+	
 	FORCEINLINE FVector2D GetCellIndex2D(const int32& GridIndex) const;
-
+	
 	FORCEINLINE int32 GetCellIndex(const FVector2D& GridXY) const;
 	
 	FORCEINLINE int32 GetCellIndexByLocation(const FVector& Location) const;
-
+	
 	FORCEINLINE int32 GetCellIndexByLocation(const FVector2D& Location) const;
-
+	
 	FORCEINLINE FVector2D GetCellIndex2DByLocation(const FVector2D& Location) const;
-
+	
 	FORCEINLINE bool IsPointInGrid(const FVector2D& Point) const;
-
+	
 	FORCEINLINE bool IsPointInCell(const FVector2D& Point, const FVector2D& CellPosition) const;
 	
 	UFUNCTION(Category = "Level Data", CallInEditor)
@@ -199,9 +200,9 @@ public:
 
 	FORCEINLINE FVector GetMeshScale() const {return MeshScale;}
 
-	FORCEINLINE TArray<FFloatArray> GetCurrentNoiseMap() const;
+	FORCEINLINE TArray<float> GetCurrentNoiseMap() const;
 	
-	FORCEINLINE TArray<FFloatArray> GetCurrentNoiseMapNormalized() const;
+	FORCEINLINE TArray<float> GetCurrentNoiseMapNormalized() const;
 
 	FORCEINLINE int32 GetRegionCellCount(const int32 SectionIndex) const;
 

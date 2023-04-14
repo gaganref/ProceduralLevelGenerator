@@ -52,11 +52,35 @@ public:
 	static bool IsPointInGrid(const FVector2D Point, const float Width, const float Height);
 
 	UFUNCTION(BlueprintCallable, Category = "Noise")
+	static float CalculateFallOffValueAtPoint(const int32 X, const int32 Y, const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, const TEnumAsByte<EFallOffShape> FallOffShape);
+	
+	UFUNCTION(BlueprintCallable, Category = "Noise")
+	static TArray<float> GenerateFallOffMap1D(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, TEnumAsByte<EFallOffShape> FallOffShape);
+	
+	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static TArray<FFloatArray> GenerateFallOffMap(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, TEnumAsByte<EFallOffShape> FallOffShape);
 	
 	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static float CalculatePerlinValueAtPoint(const int32 MapHalfWidth, const int32 MapHalfHeight, const int32 PointX, const int32 PointY, float Scale,
 	                                         const int32 Octaves, const float Persistence, const float Lacunarity, const TArray<FVector2D>& OctaveOffsets);
+
+	UFUNCTION(BlueprintCallable, Category = "Noise 1D Array")
+	static TArray<float> GenerateNoiseMap1DWithFallOff(const int32 Seed, const int32 MapWidth, const int32 MapHeight, float Scale, const int32 Octaves, const float
+												Persistence, const float Lacunarity, const FVector2D Offset, const float FallOffStart, const float FallOffEnd, const float FallOffPower,
+												const float FallOffInfluence, TEnumAsByte<EFallOffShape> FallOffShape);
+	
+	UFUNCTION(BlueprintCallable, Category = "Noise 1D Array")
+	static TArray<float> GenerateNoiseMap1D(const int32 Seed, const int32 MapWidth, const int32 MapHeight, float Scale, const int32 Octaves, const float
+												Persistence, const float Lacunarity, const FVector2D Offset);
+
+	UFUNCTION(BlueprintCallable, Category = "Noise 1D Array")
+	static TArray<float> GenerateNoiseMapNormalized1D(const int Seed, const int32 MapWidth, const int32 MapHeight, float Scale, const int32 Octaves, const float Persistence, const
+														  float Lacunarity, const FVector2D Offset, const UCurveFloat* NormalizeCurve, const float MeshHeightMultiplier, const
+														  float ClampMin, const float ClampMax);
+
+	UFUNCTION(BlueprintCallable, Category = "Noise 1D Array")
+	static TArray<float> NormalizeNoiseMap1D(TArray<float>& NoiseMap, const UCurveFloat* NormalizeCurve, const float MeshHeightMultiplier, const float
+												 ClampMin = 0.0f, const float ClampMax = 1.0f);
 	
 	UFUNCTION(BlueprintCallable, Category = "Noise")
 	static TArray<FFloatArray> GenerateNoiseMap(const int32 Seed, const int32 MapWidth, const int32 MapHeight, float Scale, const int32 Octaves, const float
@@ -68,7 +92,7 @@ public:
 	                                                      float ClampMin, const float ClampMax);
 
 	UFUNCTION(BlueprintCallable, Category = "Noise")
-	static TArray<FFloatArray> NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap, const UCurveFloat* NormalizeCurve, const float MeshHeightMultiplier, const float
+	static TArray<FFloatArray> NormalizeNoiseMap(TArray<FFloatArray>& NoiseMap, const UCurveFloat* NormalizeCurve, const float MeshHeightMultiplier, const float
 	                                             ClampMin = 0.0f, const float ClampMax = 1.0f);
 
 	UFUNCTION(BlueprintCallable, Category = "RandomPoints")
@@ -88,5 +112,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "RandomPoints")
 	static FVector GetRandomPointAround3D(const FVector Point, const float MinimumDistance, const FRandomStream& RandomStream);
-	
+
+	UFUNCTION(BlueprintCallable, Category = "Pathfinding")
+	static TArray<FVector2D> FindConnectedPoints2DByLocation(const FVector2D& InputPointLocation, const TArray<FVector2D>& TargetPointsLocations, const TArray<bool>& GridPathInfo,
+														const int32 Rows, const int32 Columns, const float GridWidth, const float GridHeight, const float CellWidth, const float CellHeight);
+
 };

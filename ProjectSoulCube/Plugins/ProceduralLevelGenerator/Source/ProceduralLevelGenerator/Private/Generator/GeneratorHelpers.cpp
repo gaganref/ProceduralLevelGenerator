@@ -49,7 +49,65 @@ bool UGeneratorHelpers::IsPointInGrid(const FVector2D Point, const float Width, 
 	return Point.X >= -HalfGridWidth && Point.X < HalfGridWidth && Point.Y >= -HalfGridHeight && Point.Y < HalfGridHeight;
 }
 
-TArray<FFloatArray> UGeneratorHelpers::GenerateFallOffMap(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, TEnumAsByte<EFallOffShape> FallOffShape)
+float UGeneratorHelpers::CalculateFallOffValueAtPoint(const int32 X, const int32 Y, const int32 MapWidth, const int32 MapHeight,
+	const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, const TEnumAsByte<EFallOffShape> FallOffShape)
+{
+	float DistanceFromCenter;
+	const FVector2D CurrentPosition = FVector2D(X, Y);
+	const FVector2D Center = FVector2D(MapWidth / 2.0f, MapHeight / 2.0f);
+
+	switch (FallOffShape)
+	{
+	case Fos_Circle:
+		{
+			DistanceFromCenter = FVector2D::Distance(Center, CurrentPosition);
+			break;
+		}
+				
+	case Fos_Square:
+		{
+			DistanceFromCenter = FMath::Max(FMath::Abs(Center.X - CurrentPosition.X), FMath::Abs(Center.Y - CurrentPosition.Y));
+			break;
+		}
+				
+	case Fos_Diamond:
+		{
+			DistanceFromCenter = FMath::Abs(Center.X - CurrentPosition.X) + FMath::Abs(Center.Y - CurrentPosition.Y);
+			break;
+		}
+				
+	default:
+		{
+			DistanceFromCenter = FVector2D::Distance(Center, CurrentPosition);
+			break;
+		}
+	}
+			
+	const float MaxDistance = Center.GetMax();
+	float FalloffValue = FMath::GetRangePct(FallOffStart * MaxDistance, FallOffEnd * MaxDistance, DistanceFromCenter);
+	FalloffValue = FMath::Clamp(FalloffValue, 0.0f, 1.0f);
+	return FMath::Pow(FalloffValue, FallOffPower) * FallOffInfluence;
+}
+
+TArray<float> UGeneratorHelpers::GenerateFallOffMap1D(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, TEnumAsByte<EFallOffShape> FallOffShape)
+{
+	TArray<float> FallOffMap;
+	FallOffMap.Reserve(MapWidth * MapHeight);
+	FallOffMap.AddUninitialized(MapWidth * MapHeight);
+
+	for(int Y=0; Y < MapHeight; ++Y)
+	{
+		for(int X=0; X < MapWidth; ++X)
+		{
+			const int32 CurrentIndex = CoordinateToIndex(X, Y, MapWidth);
+			FallOffMap[CurrentIndex] = CalculateFallOffValueAtPoint(X, Y, MapWidth, MapHeight, FallOffStart, FallOffEnd, FallOffPower, FallOffInfluence, FallOffShape);
+		}
+	}
+
+	return FallOffMap;
+}
+
+TArray<FFloatArray> UGeneratorHelpers::GenerateFallOffMap(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, const TEnumAsByte<EFallOffShape> FallOffShape)
 {
 	FFloatArray FillArray;
 	FillArray.Reserve(MapHeight);
@@ -60,31 +118,6 @@ TArray<FFloatArray> UGeneratorHelpers::GenerateFallOffMap(const int32 MapWidth, 
 	FallOffMap.Init(FillArray, MapWidth);
 
 	const FVector2D Center = FVector2D(MapWidth / 2.0f, MapHeight / 2.0f);
-	
-	// for(int Y=0; Y < MapHeight; ++Y)
-	// {
-	// 	for(int X=0; X < MapWidth; ++X)
-	// 	{
-	// 		// Circular Method
-	// 		const float DistanceFromCenter = FVector2D::Distance(Center, FVector2D(X, Y));
-	// 		const float MaxDistance = Center.GetMax();
-	// 		float FalloffValue = FMath::GetRangePct(FallOffStart * MaxDistance, FallOffEnd * MaxDistance, DistanceFromCenter);
-	// 		FalloffValue = FMath::Clamp(FalloffValue, 0.0f, 1.0f);
-	// 		FallOffMap[X][Y] = FMath::Pow(FalloffValue, FallOffPower) * FallOffInfluence;
-	//
-	// 		
-	// 		// // Square Method Extra Control
-	// 		// const float DistanceX = FMath::Abs(Center.X - X) / Center.X;
-	// 		// const float DistanceY = FMath::Abs(Center.Y - Y) / Center.Y;
-	// 		// const float DistanceFromCenter = FMath::Max(DistanceX, DistanceY);
-	// 		//
-	// 		// float FalloffValue = FMath::GetRangePct(FallOffStart, FallOffEnd, DistanceFromCenter);
-	// 		// FalloffValue = FMath::Clamp(FalloffValue, 0.0f, 1.0f);
-	// 		// FalloffValue = FMath::Pow(FalloffValue, FallOffPower);
-	// 		//
-	// 		// FallOffMap[X][Y] = DistanceFromCenter * FalloffValue * FallOffInfluence;
-	// 	}
-	// }
 
 	for(int Y=0; Y < MapHeight; ++Y)
 	{
@@ -149,7 +182,7 @@ TArray<FVector2D> UGeneratorHelpers::CalculateOcataveOffsets(const int32 Seed, c
 
 void UGeneratorHelpers::FloodFill(FDisjointSet& OutDisjointSet, const TArray<bool>& GridPathInfo, const int32 Rows, const int32 Columns)
 {
-	if(GridPathInfo.IsEmpty() || GridPathInfo.Num() != Rows * Columns-1)
+	if(GridPathInfo.IsEmpty() || GridPathInfo.Num() != Rows * Columns)
 	{
 		return;
 	}
@@ -176,7 +209,7 @@ void UGeneratorHelpers::FloodFill(FDisjointSet& OutDisjointSet, const TArray<boo
 					continue;
 				}
 
-				const int32 NeighborIndex = CoordinateToIndex(X, Y, Rows);
+				const int32 NeighborIndex = CoordinateToIndex(NewX, NewY, Rows);
 				OutDisjointSet.Union(CurrentIndex, NeighborIndex);
 			}
 		}
@@ -205,6 +238,110 @@ float UGeneratorHelpers::CalculatePerlinValueAtPoint(const int32 MapHalfWidth, c
 			
 	NoiseHeight = NoiseHeight * 0.5f + 0.5f; // Normalize the perlin value to be in between [0,1].
 	return FMath::Clamp(NoiseHeight, 0.0f, 1.0f);
+}
+
+TArray<float> UGeneratorHelpers::GenerateNoiseMap1DWithFallOff(const int32 Seed, const int32 MapWidth,
+	const int32 MapHeight, float Scale, const int32 Octaves, const float Persistence, const float Lacunarity,
+	const FVector2D Offset, const float FallOffStart, const float FallOffEnd, const float FallOffPower,
+	const float FallOffInfluence, const TEnumAsByte<EFallOffShape> FallOffShape)
+{
+	// To avoid zero division error
+	if(Scale <= 0){Scale = 0.0001f;}
+
+	const float MapHalfWidth = MapWidth/2.0f;
+	const float MapHalfHeight = MapHeight/2.0f;
+	
+	const TArray<FVector2D>& OctaveOffsets = CalculateOcataveOffsets(Seed, Octaves, Offset);
+	
+	TArray<float> NoiseMap;
+	NoiseMap.Reserve(MapWidth * MapHeight);
+	NoiseMap.AddUninitialized(MapWidth * MapHeight);
+
+	for(int Y=0; Y < MapHeight; ++Y)
+	{
+		for(int X=0; X < MapWidth; ++X)
+		{
+			const int32 CurrentIndex = CoordinateToIndex(X, Y, MapWidth);
+			const float PerlinValue = CalculatePerlinValueAtPoint(MapHalfWidth, MapHalfHeight, X, Y, Scale, Octaves, Persistence, Lacunarity, OctaveOffsets);
+			const float FallOffValue = CalculateFallOffValueAtPoint(X, Y, MapWidth, MapHeight, FallOffStart, FallOffEnd, FallOffPower, FallOffInfluence, FallOffShape);
+			NoiseMap[CurrentIndex] = FMath::Lerp(PerlinValue, 0.0f, FallOffValue);
+		}
+	}
+
+	return NoiseMap;
+}
+
+TArray<float> UGeneratorHelpers::GenerateNoiseMap1D(const int32 Seed, const int32 MapWidth, const int32 MapHeight,
+                                                    float Scale, const int32 Octaves, const float Persistence, const float Lacunarity, const FVector2D Offset)
+{
+	// To avoid zero division error
+	if(Scale <= 0){Scale = 0.0001f;}
+
+	const float MapHalfWidth = MapWidth/2.0f;
+	const float MapHalfHeight = MapHeight/2.0f;
+	
+	const TArray<FVector2D>& OctaveOffsets = CalculateOcataveOffsets(Seed, Octaves, Offset);
+	
+	TArray<float> NoiseMap;
+	NoiseMap.Reserve(MapWidth * MapHeight);
+	NoiseMap.AddUninitialized(MapWidth * MapHeight);
+
+	for(int Y=0; Y < MapHeight; ++Y)
+	{
+		for(int X=0; X < MapWidth; ++X)
+		{
+			const int32 CurrentIndex = CoordinateToIndex(X, Y, MapWidth);
+			NoiseMap[CurrentIndex] = CalculatePerlinValueAtPoint(MapHalfWidth, MapHalfHeight, X, Y, Scale, Octaves, Persistence, Lacunarity, OctaveOffsets);
+		}
+	}
+
+	return NoiseMap;
+}
+
+TArray<float> UGeneratorHelpers::GenerateNoiseMapNormalized1D(const int Seed, const int32 MapWidth,
+	const int32 MapHeight, float Scale, const int32 Octaves, const float Persistence, const float Lacunarity,
+	const FVector2D Offset, const UCurveFloat* NormalizeCurve, const float MeshHeightMultiplier, const float ClampMin,
+	const float ClampMax)
+{
+	// To avoid zero division error
+	if(Scale <= 0){Scale = 0.0001f;}
+
+	const float MapHalfWidth = MapWidth/2.0f;
+	const float MapHalfHeight = MapHeight/2.0f;
+	
+	const TArray<FVector2D>& OctaveOffsets = CalculateOcataveOffsets(Seed, Octaves, Offset);
+	
+	TArray<float> NoiseMap;
+	NoiseMap.Reserve(MapWidth * MapHeight);
+	NoiseMap.AddUninitialized(MapWidth * MapHeight);
+	
+	for(int X=0; X < MapWidth; ++X)	
+	{
+		for(int Y=0; Y < MapHeight; ++Y)
+		{
+			const int32 CurrentIndex = CoordinateToIndex(X, Y, MapWidth);
+			const float PerlinValue = CalculatePerlinValueAtPoint(MapHalfWidth, MapHalfHeight, X, Y, Scale, Octaves, Persistence, Lacunarity, OctaveOffsets); 
+			NoiseMap[CurrentIndex] = FMath::Clamp(NormalizeCurve->GetFloatValue(PerlinValue), ClampMin, ClampMax) * MeshHeightMultiplier;
+		}
+	}
+
+	return NoiseMap;
+}
+
+TArray<float> UGeneratorHelpers::NormalizeNoiseMap1D(TArray<float>& NoiseMap, const UCurveFloat* NormalizeCurve,
+	const float MeshHeightMultiplier, const float ClampMin, const float ClampMax)
+{
+	if(NoiseMap.IsEmpty())
+	{
+		return NoiseMap;
+	}
+
+	for(auto& Noise : NoiseMap)
+	{
+		Noise = FMath::Clamp(NormalizeCurve->GetFloatValue(Noise), ClampMin, ClampMax) * MeshHeightMultiplier;
+	}
+	
+	return NoiseMap;
 }
 
 TArray<FFloatArray> UGeneratorHelpers::GenerateNoiseMap(const int32 Seed, const int32 MapWidth, const int32 MapHeight,
@@ -271,7 +408,7 @@ TArray<FFloatArray> UGeneratorHelpers::GenerateNoiseMapNormalized(const int Seed
 	return NoiseMap;
 }
 
-TArray<FFloatArray> UGeneratorHelpers::NormalizeNoiseMap(const TArray<FFloatArray>& NoiseMap,
+TArray<FFloatArray> UGeneratorHelpers::NormalizeNoiseMap(TArray<FFloatArray>& NoiseMap,
                                                          const UCurveFloat* NormalizeCurve, const float MeshHeightMultiplier, const float ClampMin, const float ClampMax)
 {
 	if(NoiseMap.IsEmpty())
@@ -282,23 +419,21 @@ TArray<FFloatArray> UGeneratorHelpers::NormalizeNoiseMap(const TArray<FFloatArra
 	const int32 Width = NoiseMap.Num();
 	const int32 Height = NoiseMap[0].Num();
 	
-	TArray<FFloatArray> OutNoiseMap = NoiseMap;
-
 	for (int Y = 0; Y < Height; ++Y)
 	{
 		for (int X = 0; X < Width; ++X)
 		{
-			OutNoiseMap[X][Y] = FMath::Clamp(NormalizeCurve->GetFloatValue(OutNoiseMap[X][Y]), ClampMin, ClampMax) * MeshHeightMultiplier;
+			NoiseMap[X][Y] = FMath::Clamp(NormalizeCurve->GetFloatValue(NoiseMap[X][Y]), ClampMin, ClampMax) * MeshHeightMultiplier;
 		}
 	}
 
-	return OutNoiseMap;
+	return NoiseMap;
 }
 
 FVector2D UGeneratorHelpers::GenerateInitialPoissonPoint(const FRandomStream& RandomStream, const int32 MaximumTries, const TArray<bool>& GridPathInfo, const int32 Rows,
 	const int32 Columns, const float GridWidth, const float GridHeight, const float CellWidth, const float CellHeight)
 {
-	if(GridPathInfo.IsEmpty() || GridPathInfo.Num() != Rows * Columns-1)
+	if(GridPathInfo.IsEmpty() || GridPathInfo.Num() != Rows * Columns)
 	{
 		return FVector2D(0.0f, 0.0f);
 	}
@@ -328,7 +463,7 @@ TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPoints(const int32 Seed, cons
                                                           int32 Columns, const float GridWidth, const float GridHeight, const float CellWidth, const float CellHeight, const TArray<bool>& GridPathInfo)
 {
 
-	if(GridPathInfo.IsEmpty() || GridPathInfo.Num() != Rows * Columns-1)
+	if(GridPathInfo.IsEmpty() || GridPathInfo.Num() != Rows * Columns)
 	{
 		TArray<FVector2D> Empty;
 		return Empty;
@@ -414,22 +549,33 @@ TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPoints(const int32 Seed, cons
 TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPointsAdvanced(const int32 Seed, const int32 MaximumPoints, const float MinimumDistance, const int32 Rows, const
 														  int32 Columns, const float GridWidth, const float GridHeight, const float CellWidth, const float CellHeight, const TArray<bool>& GridPathInfo)
 {
+	if(GridPathInfo.IsEmpty() || GridPathInfo.Num() != Rows * Columns)
+	{
+		TArray<FVector2D> Empty;
+		return Empty;
+	}
+	
 	const FRandomStream RandomStream(Seed);
 	
 	TArray<FVector2D> Points;
+
+	const FVector2D CellSize(MinimumDistance / FMath::Sqrt(2.0f), MinimumDistance / FMath::Sqrt(2.0f));
+	const int32 GridRows = FMath::CeilToInt(GridWidth / CellSize.X);
+	const int32 GridColumns = FMath::CeilToInt(GridHeight / CellSize.Y);
 	
 	const float HalfGridWidth = GridWidth/2.0f;
 	const float HalfGridHeight = GridHeight/ 2.0f;
 	
 	TArray<int32> Grid;
 	Grid.Empty();
-	Grid.Reserve(Rows * Columns);
-	Grid.Init(-1, Rows * Columns);
+	Grid.Reserve(GridRows * GridColumns);
+	Grid.Init(-1, GridRows * GridColumns);
 	
-    // const FVector2D InitialPoint(RandomStream.FRandRange(-HalfGridWidth, HalfGridWidth), RandomStream.FRandRange(-HalfGridHeight, HalfGridHeight));
-
+    
 	const FVector2D InitialPoint = GenerateInitialPoissonPoint(RandomStream, 5, GridPathInfo, Rows, Columns, GridWidth, GridHeight, CellWidth, CellHeight);
-	
+
+	// const FVector2D InitialPoint(RandomStream.FRandRange(-HalfGridWidth, HalfGridWidth), RandomStream.FRandRange(-HalfGridHeight, HalfGridHeight));
+
 	Points.Add(InitialPoint);
     TArray<FVector2D> ActiveList = {InitialPoint};
 
@@ -450,9 +596,9 @@ TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPointsAdvanced(const int32 Se
         		continue;
         	}
         	
-        	const FVector2D GridPoint = LocationToCoordinate(NewPoint, GridWidth, GridHeight, CellWidth, CellHeight);
+        	const FVector2D GridPoint = LocationToCoordinate(NewPoint, GridWidth, GridHeight, CellSize.X, CellSize.Y);
         	
-        	if(GridPathInfo[CoordinateToIndex(GridPoint.X, GridPoint.Y, Rows)])
+        	if(GridPathInfo[LocationToIndex(NewPoint, GridWidth, GridHeight, CellWidth, CellHeight, Rows)])
         	{
         		bool IsValid = true;
         		for (int32 YOffset = -2; YOffset <= 2 && IsValid; ++YOffset)
@@ -463,9 +609,9 @@ TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPointsAdvanced(const int32 Se
         				Neighbour.X += XOffset;
         				Neighbour.Y += YOffset;
 
-        				if(Neighbour.X >= 0 && Neighbour.X < Rows && Neighbour.Y >= 0 && Neighbour.Y < Columns)
+        				if(Neighbour.X >= 0 && Neighbour.X < GridRows && Neighbour.Y >= 0 && Neighbour.Y < GridColumns)
         				{
-        					const int32 NeighbourIndex = Grid[CoordinateToIndex(Neighbour.X, Neighbour.Y, Rows)];
+        					const int32 NeighbourIndex = Grid[CoordinateToIndex(Neighbour.X, Neighbour.Y, GridRows)];
         					if(NeighbourIndex!= -1)
         					{
         						FVector2D NeighborPoint = Points[NeighbourIndex];
@@ -482,7 +628,7 @@ TArray<FVector2D> UGeneratorHelpers::GeneratePoisonPointsAdvanced(const int32 Se
         		{
         			Points.Add(NewPoint);
         			ActiveList.Add(NewPoint);
-        			Grid[CoordinateToIndex(GridPoint.X, GridPoint.Y, Rows)] = Points.Num() - 1;
+        			Grid[CoordinateToIndex(GridPoint.X, GridPoint.Y, GridRows)] = Points.Num() - 1;
 
         			Found = true;
         			break;
@@ -538,4 +684,29 @@ FVector UGeneratorHelpers::GetRandomPointAround3D(const FVector Point, const flo
 	const float Z = Point.Z + Radius * cosf(Inclination);
 
 	return FVector(X, Y, Z);
+}
+
+TArray<FVector2D> UGeneratorHelpers::FindConnectedPoints2DByLocation(const FVector2D& InputPointLocation,
+	const TArray<FVector2D>& TargetPointsLocations, const TArray<bool>& GridPathInfo, const int32 Rows, const int32 Columns,
+	const float GridWidth, const float GridHeight, const float CellWidth, const float CellHeight)
+{
+	FDisjointSet DisjointSet(Rows * Columns);
+
+	FloodFill(DisjointSet, GridPathInfo, Rows, Columns);
+
+	TArray<FVector2D> ConnectedPoints;
+	
+	const int32 InputPointIndex = LocationToIndex(InputPointLocation, GridWidth, GridHeight, CellWidth, CellHeight, Rows);
+	const int32 InputPointRepresentative = DisjointSet.Find(InputPointIndex);
+
+	for (const FVector2D& TargetPointLocation : TargetPointsLocations) {
+		const int32 TargetPointIndex = LocationToIndex(TargetPointLocation, GridWidth, GridHeight, CellWidth, CellHeight, Rows);
+		const int32 TargetPointRepresentative = DisjointSet.Find(TargetPointIndex);
+
+		if (InputPointRepresentative == TargetPointRepresentative) {
+			ConnectedPoints.Add(TargetPointLocation);
+		}
+	}
+
+	return ConnectedPoints;
 }

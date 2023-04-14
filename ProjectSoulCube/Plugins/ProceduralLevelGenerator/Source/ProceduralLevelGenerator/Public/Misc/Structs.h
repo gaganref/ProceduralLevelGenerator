@@ -271,10 +271,13 @@ struct FTerrainType
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin=0.0f, ClampMax=1.0f))
 	float MaxHeight = 0.0f;
-
-	// Only used if the corresponding point has a valid terrain height
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin=0, ClampMax=100))
-	uint8 ObjectSpawnProbability = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bCanSpawnObjects = false;
+	
+	// // Only used if the corresponding point has a valid terrain height
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin=0, ClampMax=100))
+	// uint8 ObjectSpawnProbability = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FLinearColor LinearColor = FLinearColor::Black;
@@ -517,17 +520,22 @@ struct FLevelSection
 		Tangents.AddUninitialized(Size);
 	}
 
-	void CreateQuad(const TArray<FFloatArray>& NoiseDataNormalized, const int32& InX, const int32& InY, const float& InBottomLeftX, const float& InBottomLeftY, const int32& Rows, const int32& Columns, FVector QuadScale)
+	void CreateQuad(const TArray<float>& NoiseDataNormalized, const int32& InX, const int32& InY, const float& InBottomLeftX, const float& InBottomLeftY, const int32& Rows, const int32& Columns, FVector QuadScale)
 	{
 		QuadScale.X = (QuadScale.X < 1) ? 1.0f : QuadScale.X;
 		QuadScale.Y = (QuadScale.Y < 1) ? 1.0f : QuadScale.Y;
 		QuadScale.Z = (QuadScale.Z < 1) ? 1.0f : QuadScale.Z;
 		
 		// Noise Heights for quad vertex points
-		const float BottomLeftNoiseHeight = NoiseDataNormalized[InX][InY];
-		const float BottomRightNoiseHeight = NoiseDataNormalized[InX][InY+1];
-		const float TopRightIndexNoiseHeight = NoiseDataNormalized[InX+1][InY+1];
-		const float TopLeftIndexNoiseHeight = NoiseDataNormalized[InX+1][InY];
+		const int32 BottomLeftIndex = CoordinateToIndex(InX, InY, Rows+1);
+		const int32 BottomRightIndex = CoordinateToIndex(InX, InY+1, Rows+1);
+		const int32 TopRightIndex = CoordinateToIndex(InX+1, InY+1, Rows+1);
+		const int32 TopLeftIndex = CoordinateToIndex(InX+1, InY, Rows+1);
+		
+		const float BottomLeftNoiseHeight = NoiseDataNormalized[BottomLeftIndex];
+		const float BottomRightNoiseHeight = NoiseDataNormalized[BottomRightIndex];
+		const float TopRightNoiseHeight = NoiseDataNormalized[TopRightIndex];
+		const float TopLeftNoiseHeight = NoiseDataNormalized[TopLeftIndex];
 		
 		// Triangle A
 		const int32 BottomLeftIndex_A = VertexIndex++;
@@ -535,8 +543,8 @@ struct FLevelSection
 		const int32 TopLeftIndex_A = VertexIndex++;
 
 		Vertices[BottomLeftIndex_A] = FVector(InBottomLeftX + InX, InBottomLeftY + InY, BottomLeftNoiseHeight) * QuadScale;
-		Vertices[TopRightIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightIndexNoiseHeight) * QuadScale;
-		Vertices[TopLeftIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY, TopLeftIndexNoiseHeight) * QuadScale;
+		Vertices[TopRightIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightNoiseHeight) * QuadScale;
+		Vertices[TopLeftIndex_A] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY, TopLeftNoiseHeight) * QuadScale;
 
 		Uvs[BottomLeftIndex_A] = FVector2D(InX/static_cast<float>(Rows), InY/static_cast<float>(Columns));
 		Uvs[TopRightIndex_A] = FVector2D((InX+1)/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
@@ -568,7 +576,7 @@ struct FLevelSection
 
 		Vertices[BottomLeftIndex_B] = FVector(InBottomLeftX + InX, InBottomLeftY + InY, BottomLeftNoiseHeight) * QuadScale;
 		Vertices[BottomRightIndex_B] = FVector(InBottomLeftX + InX, InBottomLeftY + InY + 1, BottomRightNoiseHeight) * QuadScale;
-		Vertices[TopRightIndex_B] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightIndexNoiseHeight) * QuadScale;
+		Vertices[TopRightIndex_B] = FVector(InBottomLeftX + InX + 1, InBottomLeftY + InY + 1, TopRightNoiseHeight) * QuadScale;
 
 		Uvs[BottomLeftIndex_B] = FVector2D(InX/static_cast<float>(Rows), InY/static_cast<float>(Columns));
 		Uvs[BottomRightIndex_B] = FVector2D(InX/static_cast<float>(Rows), (InY+1)/static_cast<float>(Columns));
@@ -592,5 +600,11 @@ struct FLevelSection
 		const FVector SurfaceTangent_B = (Vertices[BottomLeftIndex_B] + Vertices[BottomRightIndex_B] + Vertices[TopRightIndex_B] / 3).GetSafeNormal();
 		const FProcMeshTangent Tangent_B = FProcMeshTangent(SurfaceTangent_B, false);
 		Tangents[BottomLeftIndex_B] = Tangents[BottomRightIndex_B] = Tangents[TopRightIndex_B] = Tangent_B;
+	}
+
+private:
+	static int32 CoordinateToIndex(const int32 X, const int32 Y, const int32 Rows)
+	{
+		return Y * Rows + X; 
 	}
 };
