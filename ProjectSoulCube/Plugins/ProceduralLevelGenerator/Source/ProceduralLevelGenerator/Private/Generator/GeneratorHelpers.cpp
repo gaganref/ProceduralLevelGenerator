@@ -49,7 +49,7 @@ bool UGeneratorHelpers::IsPointInGrid(const FVector2D Point, const float Width, 
 	return Point.X >= -HalfGridWidth && Point.X < HalfGridWidth && Point.Y >= -HalfGridHeight && Point.Y < HalfGridHeight;
 }
 
-TArray<FFloatArray> UGeneratorHelpers::GenerateFallOffMap(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd)
+TArray<FFloatArray> UGeneratorHelpers::GenerateFallOffMap(const int32 MapWidth, const int32 MapHeight, const float FallOffStart, const float FallOffEnd, const float FallOffPower, const float FallOffInfluence, TEnumAsByte<EFallOffShape> FallOffShape)
 {
 	FFloatArray FillArray;
 	FillArray.Reserve(MapHeight);
@@ -59,52 +59,71 @@ TArray<FFloatArray> UGeneratorHelpers::GenerateFallOffMap(const int32 MapWidth, 
 	FallOffMap.Reserve(MapWidth);
 	FallOffMap.Init(FillArray, MapWidth);
 
+	const FVector2D Center = FVector2D(MapWidth / 2.0f, MapHeight / 2.0f);
+	
 	// for(int Y=0; Y < MapHeight; ++Y)
 	// {
 	// 	for(int X=0; X < MapWidth; ++X)
 	// 	{
-	// 		// const float PosX = X/static_cast<float>(MapWidth) * 2 - 1;
-	// 		// const float PosY = Y/static_cast<float>(MapHeight) * 2 - 1;
+	// 		// Circular Method
+	// 		const float DistanceFromCenter = FVector2D::Distance(Center, FVector2D(X, Y));
+	// 		const float MaxDistance = Center.GetMax();
+	// 		float FalloffValue = FMath::GetRangePct(FallOffStart * MaxDistance, FallOffEnd * MaxDistance, DistanceFromCenter);
+	// 		FalloffValue = FMath::Clamp(FalloffValue, 0.0f, 1.0f);
+	// 		FallOffMap[X][Y] = FMath::Pow(FalloffValue, FallOffPower) * FallOffInfluence;
 	//
-	// 		const float PosX = (static_cast<float>(X)/MapWidth) * 2 - 1;
-	// 		const float PosY = (static_cast<float>(Y)/MapHeight) * 2 - 1;
-	//
-	// 		// Find the value that is closer to the edge
-	// 		const float Value = FMath::Max(FMath::Abs(PosX), FMath::Abs(PosY));
-	//
-	// 		if(Value < FallOffStart)
-	// 		{
-	// 			FallOffMap[X][Y] = 1;
-	// 		}
-	// 		else if(Value > FallOffEnd)
-	// 		{
-	// 			FallOffMap[X][Y] = 0;
-	// 		}
-	// 		else
-	// 		{
-	// 			FallOffMap[X][Y] =  FMath::SmoothStep(1.0f, 0.0f, FMath::GetRangePct(FallOffStart, FallOffEnd, Value));
-	// 			// FallOffMap[X][Y] = FMath::SmoothStep(1.0f, 0.0f, static_cast<float>(UKismetMathLibrary::NormalizeToRange(FallOffStart, FallOffEnd, Value)));
-	// 			// FallOffMap[X][Y] = FMath::Lerp(FallOffEnd, FallOffStart, Value);
-	// 		}
+	// 		
+	// 		// // Square Method Extra Control
+	// 		// const float DistanceX = FMath::Abs(Center.X - X) / Center.X;
+	// 		// const float DistanceY = FMath::Abs(Center.Y - Y) / Center.Y;
+	// 		// const float DistanceFromCenter = FMath::Max(DistanceX, DistanceY);
+	// 		//
+	// 		// float FalloffValue = FMath::GetRangePct(FallOffStart, FallOffEnd, DistanceFromCenter);
+	// 		// FalloffValue = FMath::Clamp(FalloffValue, 0.0f, 1.0f);
+	// 		// FalloffValue = FMath::Pow(FalloffValue, FallOffPower);
+	// 		//
+	// 		// FallOffMap[X][Y] = DistanceFromCenter * FalloffValue * FallOffInfluence;
 	// 	}
 	// }
-	FVector2D center = FVector2D(MapWidth / 2.0f, MapHeight / 2.0f);
+
 	for(int Y=0; Y < MapHeight; ++Y)
 	{
 		for(int X=0; X < MapWidth; ++X)
 		{
-			// // Circular Method
-			// float distanceFromCenter = FVector2D::Distance(center, FVector2D(X, Y));
-			// float maxDistance = center.GetMax();
-			// float falloffValue = FMath::GetRangePct(FallOffStart * maxDistance, FallOffEnd * maxDistance, distanceFromCenter);
-			// FallOffMap[X][Y] = FMath::Clamp(falloffValue, 0.0f, 1.0f);
+			FVector2D CurrentPosition = FVector2D(X, Y);
+			float DistanceFromCenter;
 
-			float distanceX = FMath::Abs(center.X - X) / center.X;
-			float distanceY = FMath::Abs(center.Y - Y) / center.Y;
-			float distanceFromCenter = FMath::Max(distanceX, distanceY);
-
-			float falloffValue = FMath::GetRangePct(FallOffStart, FallOffEnd, distanceFromCenter);
-			FallOffMap[X][Y] = FMath::Clamp(falloffValue, 0.0f, 1.0f);
+			switch (FallOffShape)
+			{
+				case Fos_Circle:
+				{
+					DistanceFromCenter = FVector2D::Distance(Center, CurrentPosition);
+					break;
+				}
+				
+				case Fos_Square:
+				{
+					DistanceFromCenter = FMath::Max(FMath::Abs(Center.X - CurrentPosition.X), FMath::Abs(Center.Y - CurrentPosition.Y));
+					break;
+				}
+				
+				case Fos_Diamond:
+				{
+					DistanceFromCenter = FMath::Abs(Center.X - CurrentPosition.X) + FMath::Abs(Center.Y - CurrentPosition.Y);
+					break;
+				}
+				
+				default:
+				{
+					DistanceFromCenter = FVector2D::Distance(Center, CurrentPosition);
+					break;
+				}
+			}
+			
+			const float MaxDistance = Center.GetMax();
+			float FalloffValue = FMath::GetRangePct(FallOffStart * MaxDistance, FallOffEnd * MaxDistance, DistanceFromCenter);
+			FalloffValue = FMath::Clamp(FalloffValue, 0.0f, 1.0f);
+			FallOffMap[X][Y] = FMath::Pow(FalloffValue, FallOffPower) * FallOffInfluence;
 		}
 	}
 

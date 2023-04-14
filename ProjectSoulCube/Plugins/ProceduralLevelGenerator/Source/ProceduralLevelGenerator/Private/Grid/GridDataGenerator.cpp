@@ -17,6 +17,18 @@ UGridDataGenerator::UGridDataGenerator()
 
 void UGridDataGenerator::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
+	// Ensure FallOffStart is less than or equal to FallOffEnd
+	if (FallOffStart > FallOffEnd)
+	{
+		FallOffStart = FallOffEnd;
+	}
+
+	// Ensure FallOffEnd is greater than or equal to FallOffStart
+	if (FallOffEnd < FallOffStart)
+	{
+		FallOffEnd = FallOffStart;
+	}
+	
 	UObject::PostEditChangeProperty(PropertyChangedEvent);
 	
 	GenerateGridColorData();
@@ -82,15 +94,19 @@ void UGridDataGenerator::GenerateGridColorData()
 {
 	InitGridColorData();
 
-	// const TArray<FFloatArray>& NoiseData = GetCurrentNoiseMap();
-	const TArray<FFloatArray>& NoiseData = UGeneratorHelpers::GenerateFallOffMap(Rows, Columns, FallOffStart, FallOffEnd);
+	const TArray<FFloatArray>& NoiseData = GetCurrentNoiseMap();
+	const TArray<FFloatArray>& FallOff = UGeneratorHelpers::GenerateFallOffMap(Rows, Columns, FallOffStart, FallOffEnd, FallOffPower, FallOffInfluence, FallOffShape);
 	int32 Itr = 0;
 	
 	for(int Y=0; Y < Columns; ++Y)
 	{
 		for(int X=0; X < Rows; ++X)
 		{
-			const float CurrentHeight = NoiseData[X][Y];
+			// const float CurrentHeight = NoiseData[X][Y];
+
+			// const float CurrentHeight = FallOff[X][Y];
+
+			const float CurrentHeight = FMath::Lerp(NoiseData[X][Y], 0.0f, FallOff[X][Y]);
 			
 			const FLinearColor CurrentNoiseColor = UKismetMathLibrary::LinearColorLerp(FLinearColor::Black, FLinearColor::White, CurrentHeight);
 			

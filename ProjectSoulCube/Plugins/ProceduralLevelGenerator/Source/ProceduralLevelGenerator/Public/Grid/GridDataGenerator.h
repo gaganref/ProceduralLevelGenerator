@@ -3,10 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Generator/GeneratorHelpers.h"
 #include "UObject/Object.h"
 #include "Misc/Structs.h"
 #include "GridDataGenerator.generated.h"
 
+enum EFallOffShape;
 class FDisjointSet;
 class UQuadTree;
 struct FLinearColorArray;
@@ -57,11 +59,20 @@ protected:
 	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (TitleProperty="TerrainName"))
 	TArray<FTerrainType> LevelRegions;
 
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.001))
-	float FallOffStart;
+	UPROPERTY(Category = "FallOff Data", EditAnywhere, BlueprintReadOnly)
+	TEnumAsByte<EFallOffShape> FallOffShape = Fos_Square;
+	
+	UPROPERTY(Category = "FallOff Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.001))
+	float FallOffStart = 0.8f;
 
-	UPROPERTY(Category = "Noise Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.001))
-	float FallOffEnd;
+	UPROPERTY(Category = "FallOff Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.001))
+	float FallOffEnd = 1.0f;
+
+	UPROPERTY(Category = "FallOff Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1, ClampMax = 4, Delta = 0.001))
+	float FallOffPower = 2.0f;
+
+	UPROPERTY(Category = "FallOff Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 0, ClampMax = 1, Delta = 0.001))
+	float FallOffInfluence = 1.0f;
 	
 	UPROPERTY(Category = "Mesh Data", EditAnywhere, BlueprintReadOnly, meta = (ClampMin = 1.0 , AllowPreserveRatio, Delta = 1))
 	FVector MeshScale = FVector(100.0f, 100.0f, 100.0f);
@@ -197,4 +208,5 @@ public:
 	FORCEINLINE int32 GetRegionIndex(const int32 GridX, const int32 GridY) const;
 
 	void CalculateRegionData(TArray<uint8>& OutRegionIndexMapping, TArray<int32>& OutRegionCellCount);
+
 };
