@@ -41,7 +41,11 @@ void ALevelGenerator::Tick(float DeltaTime)
 void ALevelGenerator::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	SetActorScale3D(FVector(1.0f, 1.0f, 1.0f));
+
+	if(GetActorScale3D() != FVector::OneVector)
+	{
+		SetActorScale3D(FVector::OneVector);
+	}
 	
 	if(bGenerateOnConstruction)
 	{
@@ -59,6 +63,16 @@ void ALevelGenerator::GenerateLevel() const
 	const float TimeElapsedInMs = (FDateTime::UtcNow() - StartTime).GetTotalMilliseconds();
 	const float TimeElapsedInS = (FDateTime::UtcNow() - StartTime).GetTotalSeconds();
 	UE_LOG(LogTemp, Error, TEXT("generateMesh LG - Excecution time = %f MilliSeconds = %f Seconds."), TimeElapsedInMs, TimeElapsedInS);
+}
+
+UCustomProceduralMeshComponent* ALevelGenerator::GetProceduralMeshComponent() const
+{
+	return ProceduralMeshComponent;
+}
+
+UGridDataGenerator* ALevelGenerator::GetGridData() const
+{
+	return GridData;
 }
 
 void ALevelGenerator::GenerateMesh() const

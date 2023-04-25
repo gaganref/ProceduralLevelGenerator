@@ -61,4 +61,10 @@ public:
 	
 	UFUNCTION(Category = "Level Data", CallInEditor)
 	void GenerateLevel() const;
+
+	UFUNCTION(BlueprintCallable)
+	UCustomProceduralMeshComponent* GetProceduralMeshComponent() const;
+	
+	UFUNCTION(BlueprintCallable)
+	UGridDataGenerator* GetGridData() const;
 };
