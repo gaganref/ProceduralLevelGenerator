@@ -10,6 +10,7 @@ UFixedScaleSceneComponent::UFixedScaleSceneComponent()
 	SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
 }
 
+#if WITH_EDITOR
 void UFixedScaleSceneComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	const static FName ScaleName("RelativeScale3D");
@@ -22,6 +23,7 @@ void UFixedScaleSceneComponent::PostEditChangeProperty(FPropertyChangedEvent& Pr
 	
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+#endif
 
 void UFixedScaleSceneComponent::OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport)
 {
