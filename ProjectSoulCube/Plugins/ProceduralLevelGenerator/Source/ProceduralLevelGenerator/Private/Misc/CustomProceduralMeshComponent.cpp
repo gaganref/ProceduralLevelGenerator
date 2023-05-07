@@ -35,6 +35,8 @@ void UCustomProceduralMeshComponent::OnUpdateTransform(EUpdateTransformFlags Upd
 	}
 }
 
+#if WITH_EDITOR
+
 void UCustomProceduralMeshComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	const static FName ScaleName("RelativeScale3D");
@@ -47,6 +49,9 @@ void UCustomProceduralMeshComponent::PostEditChangeProperty(FPropertyChangedEven
 	
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+
+#endif
+
 
 void UCustomProceduralMeshComponent::CreateMesh(const TObjectPtr<UGridDataGenerator> GridData)
 {

@@ -38,7 +38,7 @@ public class ProceduralLevelGenerator : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"Slate",
-				"SlateCore",
+				"SlateCore", "MeshUtilitiesCommon",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

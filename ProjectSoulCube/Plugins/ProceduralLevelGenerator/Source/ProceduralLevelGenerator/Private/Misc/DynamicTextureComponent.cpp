@@ -281,7 +281,7 @@ TObjectPtr<UTexture2D> UDynamicTextureComponent::CreateTextureInternal(const int
                                                                        const TextureFilter& FilterMethod) const
 {
 	const TObjectPtr<UTexture2D> OutTexture = UTexture2D::CreateTransient(InWidth, InHeight);
-	OutTexture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
+	// OutTexture->MipGenSettings = TextureMipGenSettings::TMGS_NoMipmaps;
 	OutTexture->CompressionSettings = TextureCompressionSettings::TC_VectorDisplacementmap; // The VectorDisplacementMap is a raw RGBA8 format
 	OutTexture->SRGB = 1;
 	OutTexture->Filter = FilterMethod;
