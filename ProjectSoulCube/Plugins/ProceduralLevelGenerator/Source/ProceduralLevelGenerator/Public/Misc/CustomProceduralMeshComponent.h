@@ -38,7 +38,7 @@ protected:
 #endif
 
 public:
-
+	
 	void CreateMesh(TObjectPtr<UGridDataGenerator> GridData);
 
 	static TArray<FLevelSection> GenerateMeshSectionData(const TObjectPtr<UGridDataGenerator> GridData);

@@ -96,10 +96,6 @@ protected:
 	TArray<uint8> MapColorsRaw;
 
 protected:
-	
-	virtual void InitGridColorData();
-	
-	virtual void GenerateGridColorData();
 		
 #if WITH_EDITOR
 	
@@ -112,6 +108,12 @@ protected:
 
 public:
 
+	UFUNCTION(BlueprintCallable)
+	virtual void InitGridColorData();
+
+	UFUNCTION(BlueprintCallable)
+	virtual void GenerateGridColorData();
+	
 	UFUNCTION(Category = "Level Data", CallInEditor)
 	void SortLevelRegions();
 	
